@@ -11114,6 +11114,15 @@ cc_library(
 )
 
 cc_library(
+    name = "enable_sparse_fp16",
+    defines = select({
+        ":xnn_enable_sparse_fp16_explicit_true": ["XNN_ENABLE_SPARSE_FP16=1"],
+        ":xnn_enable_sparse_fp16_explicit_false": ["XNN_ENABLE_SPARSE_FP16=0"],
+        "//conditions:default": ["XNN_ENABLE_SPARSE_FP16=1"],
+    }),
+)
+
+cc_library(
     name = "enable_jit",
     defines = select({
         ":xnn_enable_jit_explicit_true": ["XNN_ENABLE_JIT=1"],
@@ -11358,6 +11367,7 @@ xnnpack_cc_library(
         ":common",
         ":enable_jit",
         ":enable_sparse",
+        ":enable_sparse_fp16",
         ":logging",
         ":math",
         ":node_type",
@@ -11394,6 +11404,7 @@ xnnpack_cc_library(
         ":common",
         ":enable_jit",
         ":enable_sparse",
+        ":enable_sparse_fp16",
         ":logging",
         ":math",
         ":node_type",
@@ -16582,6 +16593,18 @@ config_setting(
 config_setting(
     name = "xnn_enable_sparse_explicit_false",
     define_values = {"xnn_enable_sparse": "false"},
+)
+
+# Enables usage of sparse_fp16 inference.
+config_setting(
+    name = "xnn_enable_sparse_fp16_explicit_true",
+    define_values = {"xnn_enable_sparse_fp16": "true"},
+)
+
+# Disables usage of sparse_fp16 inference.
+config_setting(
+    name = "xnn_enable_sparse_fp16_explicit_false",
+    define_values = {"xnn_enable_sparse_fp16": "false"},
 )
 
 # Disables usage of HMP-aware optimizations.

@@ -22,6 +22,9 @@
 #ifndef XNN_ENABLE_SPARSE
   #error "XNN_ENABLE_SPARSE not defined"
 #endif
+#ifndef XNN_ENABLE_SPARSE_FP16
+  #error "XNN_ENABLE_SPARSE_FP16 not defined"
+#endif
 
 enum xnn_status xnn_create_subgraph(
     uint32_t external_value_ids,
@@ -222,14 +225,18 @@ void xnn_subgraph_analyze_consumers_and_producers(xnn_subgraph_t subgraph)
 #define XNN_LAYOUT_FLAG_INCOMPATIBLE_CLUSTER 8
 
 uint32_t xnn_check_nchw_compatibility(xnn_subgraph_t subgraph, struct xnn_node* node) {
-  if (node->compute_type != xnn_compute_type_fp32) {
-    if (node->type != xnn_node_type_invalid) {
-      xnn_log_info(
-          "Node %s compute type %d is incompatible with sparse inference",
-          xnn_node_type_to_string(node->type), node->compute_type);
+  #if XNN_ENABLE_SPARSE_FP16
+    if (node->compute_type != xnn_compute_type_fp16 && node->compute_type != xnn_compute_type_fp32) {
+  #else
+    if (node->compute_type != xnn_compute_type_fp32) {
+  #endif
+      if (node->type != xnn_node_type_invalid) {
+        xnn_log_info(
+            "Node %s compute type %d is incompatible with sparse inference",
+            xnn_node_type_to_string(node->type), node->compute_type);
+      }
+      return 0;
     }
-    return 0;
-  }
 
   switch (node->type) {
     case xnn_node_type_convolution_2d:
@@ -714,22 +721,25 @@ bool xnn_subgraph_rewrite_for_fp16(xnn_subgraph_t subgraph)
       xnn_log_warning("FP16 rewrite aborted: node #%" PRIu32 " (%s) is not FP32", n, xnn_node_type_to_string(node->type));
       return false;
     }
-    for (uint32_t i = 0; i < node->num_inputs; i++) {
-      if (subgraph->values[node->inputs[i]].layout == xnn_layout_type_nchw) {
-        xnn_log_warning(
-          "FP16 rewrite aborted: input #%" PRIu32 " (Value #%" PRIu32 ") of node #%" PRIu32 " (%s) has NCHW layout",
-          i, node->inputs[i], n, xnn_node_type_to_string(node->type));
-        return false;
+    #if XNN_ENABLE_SPARSE_FP16 == 0
+      for (uint32_t i = 0; i < node->num_inputs; i++) {
+        if (subgraph->values[node->inputs[i]].layout == xnn_layout_type_nchw) {
+          xnn_log_warning(
+            "FP16 rewrite aborted: input #%" PRIu32 " (Value #%" PRIu32 ") of node #%" PRIu32 " (%s) has NCHW layout",
+            i, node->inputs[i], n, xnn_node_type_to_string(node->type));
+          return false;
+        }
       }
-    }
-    for (uint32_t o = 0; o < node->num_outputs; o++) {
-      if (subgraph->values[node->outputs[o]].layout == xnn_layout_type_nchw) {
-        xnn_log_warning(
-          "FP16 rewrite aborted: output #%" PRIu32 " (Value #%" PRIu32 ") of node #%" PRIu32 " (%s) has NCHW layout",
-          o, node->outputs[o], n, xnn_node_type_to_string(node->type));
-        return false;
+      for (uint32_t o = 0; o < node->num_outputs; o++) {
+        if (subgraph->values[node->outputs[o]].layout == xnn_layout_type_nchw) {
+          xnn_log_warning(
+            "FP16 rewrite aborted: output #%" PRIu32 " (Value #%" PRIu32 ") of node #%" PRIu32 " (%s) has NCHW layout",
+            o, node->outputs[o], n, xnn_node_type_to_string(node->type));
+          return false;
+        }
       }
-    }
+    #endif
+
     switch (node->type) {
       case xnn_node_type_abs:
       case xnn_node_type_add2:

@@ -279,10 +279,11 @@ class Buffer {
   }
 
   // Some compilers can't handle static constexpr member variables.
-#if XNN_COMPILER_HAS_FEATURE(address_sanitizer) || \
-    XNN_COMPILER_HAS_FEATURE(memory_sanitizer)
+#if (XNN_COMPILER_HAS_FEATURE(address_sanitizer) || \
+    XNN_COMPILER_HAS_FEATURE(memory_sanitizer)) && !XNN_ARCH_ARM
   // If we are using msan or asan, just rely on that to detect memory bugs,
-  // rather than our own hack.
+  // rather than our own hack. We don't do this on 32-bit ARM, because ASAN
+  // doesn't seem to actually detect out of bounds writes there.
   enum { guard_bytes = 0 };
 #else
   enum { guard_bytes = std::max<size_t>(64, Alignment) };

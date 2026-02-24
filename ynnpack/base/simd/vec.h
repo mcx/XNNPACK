@@ -10,6 +10,7 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <type_traits>
 
@@ -204,19 +205,41 @@ YNN_ALWAYS_INLINE void store(T* ptr, vec<T, 1> value, size_t n) {
   if (n) *ptr = value.v;
 }
 
+// Arithmetic that avoids triggering ubsan checks for signed integer overflow.
+inline int32_t add_no_overflow(int32_t a, int32_t b) {
+  return static_cast<int64_t>(a) + static_cast<int64_t>(b);
+}
+inline int32_t sub_no_overflow(int32_t a, int32_t b) {
+  return static_cast<int64_t>(a) - static_cast<int64_t>(b);
+}
+inline int32_t mul_no_overflow(int32_t a, int32_t b) {
+  return static_cast<int64_t>(a) * static_cast<int64_t>(b);
+}
+
+// Overloads of the above to allow template code to work with floats too.
+inline float add_no_overflow(float a, float b) {
+  return a + b;
+}
+inline float sub_no_overflow(float a, float b) {
+  return a - b;
+}
+inline float mul_no_overflow(float a, float b) {
+  return a * b;
+}
+
 template <typename T>
 YNN_ALWAYS_INLINE vec<T, 1>& operator+=(vec<T, 1>& a, vec<T, 1> b) {
-  a.v += b.v;
+  a.v = add_no_overflow(a.v, b.v);
   return a;
 }
 template <typename T>
 YNN_ALWAYS_INLINE vec<T, 1>& operator-=(vec<T, 1>& a, vec<T, 1> b) {
-  a.v -= b.v;
+  a.v = sub_no_overflow(a.v, b.v);
   return a;
 }
 template <typename T>
 YNN_ALWAYS_INLINE vec<T, 1>& operator*=(vec<T, 1>& a, vec<T, 1> b) {
-  a.v *= b.v;
+  a.v = mul_no_overflow(a.v, b.v);
   return a;
 }
 template <typename T>

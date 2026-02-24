@@ -29,18 +29,17 @@ namespace ynn {
 template <typename T, typename Rng>
 void fill_uniform_random_bits(T* data, size_t size, Rng& rng) {
   using RngT = decltype(rng());
-  RngT* data_rng_t = reinterpret_cast<RngT*>(data);
   size_t size_bytes = size * sizeof(T);
-  size_t i = 0;
   // Fill with as many RngT as we can.
-  for (; i + sizeof(RngT) <= size_bytes; i += sizeof(RngT)) {
-    *data_rng_t++ = rng();
+  while (size_bytes >= sizeof(RngT)) {
+    RngT bits = rng();
+    memcpy(data, &bits, sizeof(RngT));
+    data = offset_bytes(data, sizeof(RngT));
+    size_bytes -= sizeof(RngT);
   }
   // Fill the remaining bytes.
-  char* data_char = reinterpret_cast<char*>(data_rng_t);
-  for (; i < size_bytes; ++i) {
-    *data_char++ = rng() & 0xff;
-  }
+  RngT bits = rng();
+  memcpy(data, &bits, size_bytes);
 }
 
 // Generate a random shape of the given rank, where each dim is in [min_dim,

@@ -17,6 +17,11 @@ struct subgraph_analysis {
   std::map<uint32_t, ynn_node*> producers;
   std::map<uint32_t, std::vector<ynn_node*>> consumers;
 
+  ynn_node* producer_of(uint32_t id) {
+    auto i = producers.find(id);
+    return i != producers.end() ? i->second : nullptr;
+  }
+
   explicit subgraph_analysis(ynn_subgraph& subgraph);
 };
 

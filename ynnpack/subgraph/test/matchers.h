@@ -7,6 +7,7 @@
 #define XNNPACK_YNNPACK_SUBGRAPH_TEST_MATCHERS_H_
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
@@ -258,6 +259,7 @@ auto InputsInclude(Args&&... args) {
 inline const ynn_node& ProducerOf(uint32_t value_id,
                                   const ynn_subgraph& subgraph) {
   const ynn_node* node = subgraph.get_producer(value_id);
+  assert(node);
   return *node;
 }
 

@@ -20,6 +20,8 @@
 #include "ynnpack/subgraph/utils.h"
 #include "slinky/runtime/buffer.h"
 
+namespace ynn {
+
 namespace {
 
 constexpr size_t kLog2MaxLutInputSize = 8;
@@ -172,7 +174,7 @@ subgraph_candidate find_subgraph_for_unary_lut(
     return candidate;
   }
   const ynn_value& output = subgraph.value(node.outputs[0]);
-  if (ynn::type_size_bytes(output.type) > 1) {
+  if (type_size_bytes(output.type) > 1) {
     return candidate;
   }
 
@@ -190,8 +192,7 @@ subgraph_candidate find_subgraph_for_unary_lut(
   auto maybe_update_best_candidate = [&](const subgraph_candidate& candidate) {
     if (inputs_to_traverse.size() == 1) {
       uint32_t in_id = *inputs_to_traverse.begin();
-      if (ynn::type_size_bits(subgraph.value(in_id).type) <=
-          kLog2MaxLutInputSize) {
+      if (type_size_bits(subgraph.value(in_id).type) <= kLog2MaxLutInputSize) {
         best_candidate = candidate;
         best_candidate.set_input_id(in_id);
       }
@@ -277,7 +278,7 @@ bool rewrite_subgraph_for_unary_lut(ynn_subgraph& subgraph,
   // Clone the candidate subgraph.
   uint32_t lut_input_id = YNN_INVALID_VALUE_ID;
   uint32_t lut_output_id = YNN_INVALID_VALUE_ID;
-  std::optional<ynn_subgraph> lut_subgraph = ynn::clone_subgraph_subset(
+  std::optional<ynn_subgraph> lut_subgraph = clone_subgraph_subset(
       subgraph, best_candidate.get_input_id(), best_candidate.get_output_id(),
       lut_input_id, lut_output_id);
   if (!lut_subgraph) {
@@ -317,8 +318,7 @@ bool rewrite_subgraph_for_unary_lut(ynn_subgraph& subgraph,
 
   const ynn_value& output_value =
       subgraph.value(best_candidate.get_output_id());
-  std::vector<uint8_t> output_data(range *
-                                   ynn::type_size_bytes(output_value.type));
+  std::vector<uint8_t> output_data(range * type_size_bytes(output_value.type));
   if (ynn_set_external_value_data(&runtime, lut_output_id,
                                   output_data.data()) != ynn_status_success) {
     return false;
@@ -343,7 +343,9 @@ bool rewrite_subgraph_for_unary_lut(ynn_subgraph& subgraph,
   // Replace and invalidate all nodes in `candidate` with the new LUT node.
   ynn_node* output_node = analysis.producers[best_candidate.get_output_id()];
 
-  ynn::define_lut(subgraph, *output_node, best_candidate.get_input_id(), lut_id,
-                  best_candidate.output_id());
+  define_lut(subgraph, *output_node, best_candidate.get_input_id(), lut_id,
+             best_candidate.output_id());
   return true;
 }
+
+}  // namespace ynn

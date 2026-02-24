@@ -8,7 +8,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
-#include <map>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -25,6 +24,8 @@
 #include "ynnpack/subgraph/reduce.h"
 #include "ynnpack/subgraph/stencil_copy.h"
 #include "ynnpack/subgraph/subgraph.h"
+
+namespace ynn {
 
 namespace {
 
@@ -47,24 +48,22 @@ bool rewrite_multiply_add(ynn_subgraph& subgraph, ynn_node& node,
   }
 
   for (int i : {0, 1}) {
-    auto producer = analysis.producers.find(node.inputs[i]);
-    if (producer != analysis.producers.end() &&
-        analysis.consumers[producer->second->outputs[0]].size() == 1) {
-      if (is_binary_node(*producer->second, ynn_binary_multiply)) {
-        // This is a multiply-add. Do we have a kernel for this case?
-        const ynn_value& a = subgraph.value(producer->second->inputs[0]);
-        const ynn_value& b = subgraph.value(producer->second->inputs[1]);
-        const ynn_value& c = subgraph.value(node.inputs[1 - i]);
-        const ynn_value& x = subgraph.value(node.outputs[0]);
-        const ynn::ternary_kernel_fn kernel = ynn::get_ternary_kernel(
-            ynn::ternary_op::multiply_add, a.type, b.type, c.type, x.type);
-        if (kernel != nullptr) {
-          // Yes we do. Rewrite this to a multiply-add.
-          YNN_LOG_DEBUG() << "Rewriting convert to ternary multiply_add";
-          ynn::define_ternary(subgraph, node, a.id, b.id, c.id, x.id,
-                              ynn::ternary_op::multiply_add, kernel);
-          return true;
-        }
+    ynn_node* producer = analysis.producer_of(node.inputs[i]);
+    if (producer && is_binary_node(*producer, ynn_binary_multiply) &&
+        analysis.consumers[producer->outputs[0]].size() == 1) {
+      // This is a multiply-add. Do we have a kernel for this case?
+      const ynn_value& a = subgraph.value(producer->inputs[0]);
+      const ynn_value& b = subgraph.value(producer->inputs[1]);
+      const ynn_value& c = subgraph.value(node.inputs[1 - i]);
+      const ynn_value& x = subgraph.value(node.outputs[0]);
+      const ynn::ternary_kernel_fn kernel = ynn::get_ternary_kernel(
+          ynn::ternary_op::multiply_add, a.type, b.type, c.type, x.type);
+      if (kernel != nullptr) {
+        // Yes we do. Rewrite this to a multiply-add.
+        YNN_LOG_DEBUG() << "Rewriting convert to ternary multiply_add";
+        ynn::define_ternary(subgraph, node, a.id, b.id, c.id, x.id,
+                            ynn::ternary_op::multiply_add, kernel);
+        return true;
       }
     }
   }
@@ -85,28 +84,26 @@ bool rewrite_subtract_multiply(ynn_subgraph& subgraph, ynn_node& node,
     return false;
   }
 
-  auto producer = analysis.producers.find(mul_id);
-  if (producer != analysis.producers.end() &&
-      analysis.consumers[producer->second->outputs[0]].size() == 1) {
-    if (is_binary_node(*producer->second, ynn_binary_multiply)) {
-      // This is a subtract_multiply. Do we have a kernel for this case?
-      const ynn_value& b = subgraph.value(producer->second->inputs[0]);
-      const ynn_value& c = subgraph.value(producer->second->inputs[1]);
-      const ynn_value& x = subgraph.value(node.outputs[0]);
-      if (a_id == YNN_INVALID_VALUE_ID) {
-        a_id = subgraph.get_scalar_value_id(x.type, YNN_INVALID_VALUE_ID,
-                                            YNN_INVALID_VALUE_ID, 0.0f);
-      }
-      const ynn_value& a = subgraph.value(a_id);
+  ynn_node* producer = analysis.producer_of(mul_id);
+  if (producer && is_binary_node(*producer, ynn_binary_multiply) &&
+      analysis.consumers[producer->outputs[0]].size() == 1) {
+    // This is a subtract_multiply. Do we have a kernel for this case?
+    const ynn_value& b = subgraph.value(producer->inputs[0]);
+    const ynn_value& c = subgraph.value(producer->inputs[1]);
+    const ynn_value& x = subgraph.value(node.outputs[0]);
+    if (a_id == YNN_INVALID_VALUE_ID) {
+      a_id = subgraph.get_scalar_value_id(x.type, YNN_INVALID_VALUE_ID,
+                                          YNN_INVALID_VALUE_ID, 0.0f);
+    }
+    const ynn_value& a = subgraph.value(a_id);
 
-      const ynn::ternary_kernel_fn kernel = ynn::get_ternary_kernel(
-          ynn::ternary_op::subtract_multiply, a.type, b.type, c.type, x.type);
-      if (kernel != nullptr) {
-        YNN_LOG_DEBUG() << "Rewriting convert to ternary subtract_multiply";
-        ynn::define_ternary(subgraph, node, a.id, b.id, c.id, x.id,
-                            ynn::ternary_op::subtract_multiply, kernel);
-        return true;
-      }
+    const ynn::ternary_kernel_fn kernel = ynn::get_ternary_kernel(
+        ynn::ternary_op::subtract_multiply, a.type, b.type, c.type, x.type);
+    if (kernel != nullptr) {
+      YNN_LOG_DEBUG() << "Rewriting convert to ternary subtract_multiply";
+      ynn::define_ternary(subgraph, node, a.id, b.id, c.id, x.id,
+                          ynn::ternary_op::subtract_multiply, kernel);
+      return true;
     }
   }
   return false;
@@ -136,25 +133,22 @@ bool rewrite_convert_to_multiply(ynn_subgraph& subgraph, ynn_node& node,
     return false;
   }
 
-  auto producer = analysis.producers.find(input.scale_id);
-  if (producer != analysis.producers.end()) {
-    if (is_binary_node(*producer->second, ynn_binary_multiply)) {
-      uint32_t scale_a_id = producer->second->inputs[0];
-      uint32_t scale_b_id = producer->second->inputs[1];
+  ynn_node* producer = analysis.producer_of(input.scale_id);
+  if (producer && is_binary_node(*producer, ynn_binary_multiply)) {
+    uint32_t scale_a_id = producer->inputs[0];
+    uint32_t scale_b_id = producer->inputs[1];
 
-      const ynn::ternary_kernel_fn kernel =
-          ynn::get_ternary_kernel(ynn::ternary_op::multiply, input.type,
-                                  subgraph.value(scale_a_id).type,
-                                  subgraph.value(scale_b_id).type, output.type);
-      if (kernel != nullptr) {
-        // This is a ternary integer*float*float multiply, and we have a kernel
-        // that matches the types we have.
-        YNN_LOG_DEBUG() << "Rewriting convert to ternary multiply";
-        ynn::define_ternary(subgraph, node, node.inputs[0], scale_a_id,
-                            scale_b_id, node.outputs[0],
-                            ynn::ternary_op::multiply, kernel);
-        return true;
-      }
+    const ynn::ternary_kernel_fn kernel = ynn::get_ternary_kernel(
+        ynn::ternary_op::multiply, input.type, subgraph.value(scale_a_id).type,
+        subgraph.value(scale_b_id).type, output.type);
+    if (kernel != nullptr) {
+      // This is a ternary integer*float*float multiply, and we have a kernel
+      // that matches the types we have.
+      YNN_LOG_DEBUG() << "Rewriting convert to ternary multiply";
+      ynn::define_ternary(subgraph, node, node.inputs[0], scale_a_id,
+                          scale_b_id, node.outputs[0],
+                          ynn::ternary_op::multiply, kernel);
+      return true;
     }
   }
   const ynn::binary_kernel* kernel =
@@ -218,25 +212,23 @@ bool rewrite_clamp(ynn_subgraph& subgraph, ynn_node& node,
   }
 
   for (int i : {0, 1}) {
-    auto producer = analysis.producers.find(node.inputs[i]);
-    if (producer != analysis.producers.end() &&
-        analysis.consumers[producer->second->outputs[0]].size() == 1) {
-      if (is_binary_node(*producer->second, ynn_binary_max)) {
-        // This is a clamp. Do we have a kernel for this case?
-        const ynn_value& a = subgraph.value(producer->second->inputs[0]);
-        const ynn_value& b = subgraph.value(producer->second->inputs[1]);
-        const ynn_value& c = subgraph.value(node.inputs[1 - i]);
-        const ynn_value& x = subgraph.value(node.outputs[0]);
+    ynn_node* producer = analysis.producer_of(node.inputs[i]);
+    if (producer && is_binary_node(*producer, ynn_binary_max) &&
+        analysis.consumers[producer->outputs[0]].size() == 1) {
+      // This is a clamp. Do we have a kernel for this case?
+      const ynn_value& a = subgraph.value(producer->inputs[0]);
+      const ynn_value& b = subgraph.value(producer->inputs[1]);
+      const ynn_value& c = subgraph.value(node.inputs[1 - i]);
+      const ynn_value& x = subgraph.value(node.outputs[0]);
 
-        const ynn::ternary_kernel_fn kernel = ynn::get_ternary_kernel(
-            ynn::ternary_op::clamp, a.type, b.type, c.type, x.type);
-        if (kernel != nullptr) {
-          // Yes we do. Rewrite this to a clamp.
-          YNN_LOG_DEBUG() << "Rewriting min(max(a, b), c) to ternary clamp";
-          ynn::define_ternary(subgraph, node, a.id, b.id, c.id, x.id,
-                              ynn::ternary_op::clamp, kernel);
-          return true;
-        }
+      const ynn::ternary_kernel_fn kernel = ynn::get_ternary_kernel(
+          ynn::ternary_op::clamp, a.type, b.type, c.type, x.type);
+      if (kernel != nullptr) {
+        // Yes we do. Rewrite this to a clamp.
+        YNN_LOG_DEBUG() << "Rewriting min(max(a, b), c) to ternary clamp";
+        ynn::define_ternary(subgraph, node, a.id, b.id, c.id, x.id,
+                            ynn::ternary_op::clamp, kernel);
+        return true;
       }
     }
   }
@@ -429,24 +421,19 @@ ynn_node* find_non_copy_producer(const ynn_subgraph& subgraph,
                                  uint32_t start_id) {
   uint32_t search_id = start_id;
   while (true) {
-    auto producer = analysis.producers.find(search_id);
-    if (producer == analysis.producers.end()) {
-      return nullptr;
-    }
-
-    ynn_node* producer_node = producer->second;
-    if (!is_copy_node(*producer_node, subgraph)) {
-      return producer_node;
+    ynn_node* producer = analysis.producer_of(search_id);
+    if (!producer || !is_copy_node(*producer, subgraph)) {
+      return producer;
     }
 
     // Check that the intermediate output has exactly one consumer
     // and is not an external output, so it's safe to modify the chain.
-    uint32_t output_id = producer_node->outputs[0];
+    uint32_t output_id = producer->outputs[0];
     if (analysis.consumers[output_id].size() != 1 ||
         subgraph.value(output_id).is_external_output()) {
       return nullptr;
     }
-    search_id = producer_node->inputs[0];
+    search_id = producer->inputs[0];
   }
   return nullptr;
 }
@@ -521,18 +508,13 @@ bool rewrite_reduce_sum_convert(ynn_subgraph& subgraph, ynn_node& node,
     return false;
   }
 
-  auto producer = analysis.producers.find(node.inputs[0]);
-  if (producer == analysis.producers.end()) {
+  ynn_node* convert = analysis.producer_of(node.inputs[0]);
+  if (!convert || !is_unary_node(*convert, ynn_unary_convert)) {
     return false;
   }
 
-  ynn_node* convert_node = producer->second;
-  if (!is_unary_node(*convert_node, ynn_unary_convert)) {
-    return false;
-  }
-
-  const ynn_value& x = subgraph.value(convert_node->inputs[0]);
-  const ynn_value& converted_x = subgraph.value(convert_node->outputs[0]);
+  const ynn_value& x = subgraph.value(convert->inputs[0]);
+  const ynn_value& converted_x = subgraph.value(convert->outputs[0]);
 
   if (converted_x.type == ynn_type_fp32) {
     if (!ynn::type_is_floating_point(x.type)) {
@@ -568,18 +550,13 @@ bool rewrite_reduce_sum_squared_convert(ynn_subgraph& subgraph, ynn_node& node,
     return false;
   }
 
-  auto producer = analysis.producers.find(node.inputs[0]);
-  if (producer == analysis.producers.end()) {
+  ynn_node* convert = analysis.producer_of(node.inputs[0]);
+  if (!convert || !is_unary_node(*convert, ynn_unary_convert)) {
     return false;
   }
 
-  ynn_node* convert_node = producer->second;
-  if (!is_unary_node(*convert_node, ynn_unary_convert)) {
-    return false;
-  }
-
-  const ynn_value& x = subgraph.value(convert_node->inputs[0]);
-  const ynn_value& converted_x = subgraph.value(convert_node->outputs[0]);
+  const ynn_value& x = subgraph.value(convert->inputs[0]);
+  const ynn_value& converted_x = subgraph.value(convert->outputs[0]);
 
   if (converted_x.type == ynn_type_fp32) {
     if (!ynn::type_is_floating_point(x.type)) {
@@ -607,6 +584,8 @@ bool rewrite_reduce_sum_squared_convert(ynn_subgraph& subgraph, ynn_node& node,
 
 }  // namespace
 
+}  // namespace ynn
+
 ynn_status ynn_subgraph::fusion() {
   // Fuse graph as much as possible before unary LUT optimization.
   bool changed;
@@ -616,22 +595,23 @@ ynn_status ynn_subgraph::fusion() {
     for (ynn_node& node : nodes) {
       if (!node.is_valid()) continue;
 
-      changed = changed || rewrite_multiply_add(*this, node, analysis) ||
-                rewrite_subtract_multiply(*this, node, analysis) ||
-                rewrite_convert_to_multiply(*this, node, analysis) ||
-                rewrite_clamp(*this, node, analysis) ||
-                rewrite_convert_to_quantize(*this, node, analysis) ||
-                remove_broadcast(*this, node, analysis) ||
-                rewrite_transpose_stencil_copy(*this, node, analysis) ||
-                rewrite_reduce_sum_of_squared(*this, node, analysis) ||
-                rewrite_reduce_sum_convert(*this, node, analysis) ||
-                rewrite_reduce_sum_squared_convert(*this, node, analysis);
+      changed =
+          changed || ynn::rewrite_multiply_add(*this, node, analysis) ||
+          ynn::rewrite_subtract_multiply(*this, node, analysis) ||
+          ynn::rewrite_convert_to_multiply(*this, node, analysis) ||
+          ynn::rewrite_clamp(*this, node, analysis) ||
+          ynn::rewrite_convert_to_quantize(*this, node, analysis) ||
+          ynn::remove_broadcast(*this, node, analysis) ||
+          ynn::rewrite_transpose_stencil_copy(*this, node, analysis) ||
+          ynn::rewrite_reduce_sum_of_squared(*this, node, analysis) ||
+          ynn::rewrite_reduce_sum_convert(*this, node, analysis) ||
+          ynn::rewrite_reduce_sum_squared_convert(*this, node, analysis);
     }
   } while (changed);
 
   do {
     subgraph_analysis analysis(*this);
-    changed = rewrite_subgraph_for_unary_lut(*this, analysis);
+    changed = ynn::rewrite_subgraph_for_unary_lut(*this, analysis);
   } while (changed);
 
   return ynn_status_success;

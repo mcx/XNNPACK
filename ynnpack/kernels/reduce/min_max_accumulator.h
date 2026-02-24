@@ -136,7 +136,7 @@ struct min_max_accumulator {
   }
 
   template <typename AccT>
-  void accumulate_min(T* __restrict C, size_t n, const AccT* acc) {
+  void accumulate_min(T* __restrict C, size_t n, const AccT* __restrict acc) {
     switch (n) {
       case 4:
         C[3] = min(C[3], horizontal_min(acc[3]));
@@ -153,7 +153,7 @@ struct min_max_accumulator {
   }
 
   template <typename AccT>
-  void accumulate_max(T* __restrict C, size_t n, const AccT* acc) {
+  void accumulate_max(T* __restrict C, size_t n, const AccT* __restrict acc) {
     switch (n) {
       case 4:
         C[3] = max(C[3], horizontal_max(acc[3]));

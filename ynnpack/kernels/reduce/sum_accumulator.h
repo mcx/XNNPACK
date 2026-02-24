@@ -69,6 +69,8 @@ YNN_ALWAYS_INLINE auto sum_rows(const AccT* acc,
   auto v_1 = (extract<0>(acc[1], cols) + extract<1>(acc[1], cols)) +
              (extract<2>(acc[1], cols) + extract<3>(acc[1], cols));
 
+  // TODO(dsharlet): This returns a vector of 4 values, when it should return
+  // a vector of 2 values.
   auto zero = decltype(v_0)(0);
   auto t = transpose<typename AccT::value_type>({{v_0, v_1, zero, zero}});
   return (t[0] + t[1]) + (t[2] + t[3]);
@@ -98,6 +100,25 @@ YNN_ALWAYS_INLINE auto sum_rows(const AccT* acc,
   return (t[0] + t[1]) + (t[2] + t[3]);
 }
 
+#ifndef YNN_ARCH_X86
+// This is not numerically consistent, don't let it be used on x86.
+template <typename AccT, size_t K, size_t N>
+YNN_ALWAYS_INLINE auto sum_rows(const AccT* __restrict acc,
+                                std::integral_constant<size_t, K> /*K*/,
+                                std::integral_constant<size_t, N> /*N*/) {
+  using scalar = typename AccT::value_type;
+  scalar result[N];
+  YNN_UNROLL
+  for (size_t i = 0; i < N; ++i) {
+    result[i] = simd::horizontal_sum(acc[i]);
+  }
+  // TODO(dsharlet): This returns a vector of 4 values to meet the assumptions
+  // of the callers below. It should return a vector of N values.
+  static_assert(N <= 4);
+  return simd::load(result, N, simd::vec<scalar, 4>{});
+}
+#endif  // YNN_ARCH_X86
+
 template <typename AccT, size_t K_, typename MapFn = Identity, size_t N_ = 4>
 struct sum_accumulator_x32 {
   static constexpr std::integral_constant<size_t, N_> N = {};
@@ -123,16 +144,18 @@ struct sum_accumulator_x32 {
                                 NT n, KT k) {
     const simd::vec<AT, K> zero(0);
     auto a_0 = load(offset_bytes(A, 0 * A_stride_n), k, zero);
-    auto a_1 = 1 < n ? load(offset_bytes(A, 1 * A_stride_n), k, zero) : zero;
     acc[0] = reduce_add(acc[0], a_0, map_fn, horizontal_factor);
-    acc[1] = reduce_add(acc[1], a_1, map_fn, horizontal_factor);
-
-    if constexpr (N == 4) {
+    if constexpr (N >= 2) {
+      auto a_1 = 1 < n ? load(offset_bytes(A, 1 * A_stride_n), k, zero) : zero;
+      acc[1] = reduce_add(acc[1], a_1, map_fn, horizontal_factor);
+    }
+    if constexpr (N >= 4) {
       auto a_2 = 2 < n ? load(offset_bytes(A, 2 * A_stride_n), k, zero) : zero;
       auto a_3 = 3 < n ? load(offset_bytes(A, 3 * A_stride_n), k, zero) : zero;
       acc[2] = reduce_add(acc[2], a_2, map_fn, horizontal_factor);
       acc[3] = reduce_add(acc[3], a_3, map_fn, horizontal_factor);
     }
+    static_assert(N <= 4, "");
   }
 
   template <typename T, typename NT>

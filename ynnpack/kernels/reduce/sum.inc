@@ -15,6 +15,11 @@ YNN_UNARY_REDUCE_KERNEL(arch_flag::neon, sum_fp32_neon, float, float)
 YNN_UNARY_REDUCE_KERNEL(arch_flag::neon, sum_bf16_fp32_neon, bfloat16, float)
 #endif  // YNN_ARCH_ARM_NEON
 
+#ifdef YNN_ARCH_HEXAGON_HVX
+YNN_UNARY_REDUCE_KERNEL(arch_flag::hvx, sum_int8_int32_hvx, int8_t, int32_t)
+YNN_UNARY_REDUCE_KERNEL(arch_flag::hvx, sum_uint8_int32_hvx, uint8_t, int32_t)
+#endif  // YNN_ARCH_HEXAGON_HVX
+
 #ifdef YNN_ARCH_X86_AVX512BF16
 YNN_UNARY_REDUCE_KERNEL(arch_flag::avx512bf16, sum_bf16_fp32_avx512bf16, bfloat16, float)
 #endif  // YNN_ARCH_X86_AVX512BF16

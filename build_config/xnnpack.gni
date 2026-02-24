@@ -5,14 +5,20 @@
 
 # This file contains various templates and helpers for XNNPACK's GN build.
 
-# Resolve to the parent GN path
+import("//build/config/gclient_args.gni")
+
+# Resolve to the parent GN path.
 xnnpack_path_prefix = get_path_info("../", "abspath")
+if (build_with_chromium) {
+  xnnpack_path_prefix = "//third_party/xnnpack/src"
+}
 
 xnnpack_add_configs = [
+  "//build/config/compiler:no_chromium_code",
   xnnpack_path_prefix + ":xnnpack_public_config",
   xnnpack_path_prefix + ":xnnpack_private_config",
-  xnnpack_path_prefix + "//build/config/compiler:no_chromium_code",
 ]
+xnnpack_remove_configs = [ "//build/config/compiler:chromium_code" ]
 
 template("xnnpack_source_set") {
   target("source_set", target_name) {
@@ -22,6 +28,7 @@ template("xnnpack_source_set") {
                              "configs",
                              "remove_configs",
                            ])
+    configs -= xnnpack_remove_configs
     configs += xnnpack_add_configs
     if (defined(invoker.remove_configs)) {
       configs -= invoker.remove_configs
@@ -47,6 +54,7 @@ template("xnnpack_test") {
     } else {
       cflags = []
     }
+    configs -= xnnpack_remove_configs
     configs += xnnpack_add_configs
     configs -= [ "//build/config/clang:find_bad_constructs" ]
     if (defined(invoker.remove_configs)) {
@@ -86,6 +94,7 @@ template("xnnpack_benchmark") {
     } else {
       cflags = []
     }
+    configs -= xnnpack_remove_configs
     configs += xnnpack_add_configs
     configs -= [ "//build/config/clang:find_bad_constructs" ]
     if (defined(invoker.remove_configs)) {
@@ -101,8 +110,8 @@ template("xnnpack_benchmark") {
       xnnpack_path_prefix + ":test_support",
       xnnpack_path_prefix + ":benchmark_test_support",
       xnnpack_path_prefix + ":xnnpack",
-      "//third_party/google_benchmark_chrome:benchmark_main",
-      "//third_party/google_benchmark_chrome:google_benchmark",
+      "//third_party/google_benchmark:benchmark_main",
+      "//third_party/google_benchmark",
       "//third_party/googletest:gtest",
     ]
     if (defined(invoker.deps)) {

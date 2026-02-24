@@ -99,10 +99,10 @@ deps = {
   },
   'third_party/googletest/src':
     Var('chromium_url') + '/external/github.com/google/googletest.git' + '@' + '4fe3307fb2d9f86d19777c7eb0e4809e9694dde7',
-  'third_party/google_benchmark_chrome': {
+  'third_party/google_benchmark': {
     'url': Var('chromium_url') + '/chromium/src/third_party/google_benchmark.git' + '@' + 'abeba5d5e6db5bdf85261045e148f1db3fdc40ad',
   },
-  'third_party/google_benchmark_chrome/src': {
+  'third_party/google_benchmark/src': {
     'url': Var('chromium_url') + '/external/github.com/google/benchmark.git' + '@' + '7da00e8f6763d6e8c284d172c9cfcc5ae0ce9b7a',
   },
   'third_party/kleidiai/src': {

@@ -3,7 +3,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import("//build_config/xnnpack.gni")
+import("build_config/xnnpack.gni")
 
 # Import argument definitions
 import("//build/buildflag_header.gni")
@@ -26,51 +26,51 @@ if (is_clang) {
 # These are generated lists of files that contains XNNPACK's various
 # compute kernels. These are technically Bazel-format files, but they
 # can be read with GN too.
-import("//gen/scalar_microkernels.bzl")
+import("gen/scalar_microkernels.bzl")
 
-import("//gen/aarch64_microkernels.bzl")
-import("//gen/neon_aarch64_microkernels.bzl")
-import("//gen/neon_microkernels.bzl")
-import("//gen/neonbf16_microkernels.bzl")
-import("//gen/neondot_aarch64_microkernels.bzl")
-import("//gen/neondot_microkernels.bzl")
-import("//gen/neondotfp16arith_microkernels.bzl")
-import("//gen/neonfma_aarch64_microkernels.bzl")
-import("//gen/neonfma_microkernels.bzl")
-import("//gen/neonfp16_microkernels.bzl")
-import("//gen/neonfp16arith_aarch64_microkernels.bzl")
-import("//gen/neonfp16arith_microkernels.bzl")
-import("//gen/neoni8mm_microkernels.bzl")
-import("//gen/neonsme2_microkernels.bzl")
-import("//gen/neonsme_microkernels.bzl")
-import("//gen/neonv8_microkernels.bzl")
+import("gen/aarch64_microkernels.bzl")
+import("gen/neon_aarch64_microkernels.bzl")
+import("gen/neon_microkernels.bzl")
+import("gen/neonbf16_microkernels.bzl")
+import("gen/neondot_aarch64_microkernels.bzl")
+import("gen/neondot_microkernels.bzl")
+import("gen/neondotfp16arith_microkernels.bzl")
+import("gen/neonfma_aarch64_microkernels.bzl")
+import("gen/neonfma_microkernels.bzl")
+import("gen/neonfp16_microkernels.bzl")
+import("gen/neonfp16arith_aarch64_microkernels.bzl")
+import("gen/neonfp16arith_microkernels.bzl")
+import("gen/neoni8mm_microkernels.bzl")
+import("gen/neonsme2_microkernels.bzl")
+import("gen/neonsme_microkernels.bzl")
+import("gen/neonv8_microkernels.bzl")
 
-import("//gen/amd64_microkernels.bzl")
-import("//gen/avx256skx_microkernels.bzl")
-import("//gen/avx256vnni_microkernels.bzl")
-import("//gen/avx256vnnigfni_microkernels.bzl")
-import("//gen/avx2_microkernels.bzl")
-import("//gen/avx512amx_microkernels.bzl")
-import("//gen/avx512f_microkernels.bzl")
-import("//gen/avx512fp16_microkernels.bzl")
-import("//gen/avx512skx_microkernels.bzl")
-import("//gen/avx512vbmi_microkernels.bzl")
-import("//gen/avx512vnni_microkernels.bzl")
-import("//gen/avx512vnnigfni_microkernels.bzl")
-import("//gen/avx_microkernels.bzl")
-import("//gen/avxvnni_microkernels.bzl")
-import("//gen/avxvnniint8_microkernels.bzl")
-import("//gen/f16c_microkernels.bzl")
-import("//gen/fma3_microkernels.bzl")
-import("//gen/sse2_microkernels.bzl")
-import("//gen/sse2fma_microkernels.bzl")
-import("//gen/sse41_microkernels.bzl")
-import("//gen/sse_microkernels.bzl")
-import("//gen/sse_microkernels.bzl")
-import("//gen/ssse3_microkernels.bzl")
+import("gen/amd64_microkernels.bzl")
+import("gen/avx256skx_microkernels.bzl")
+import("gen/avx256vnni_microkernels.bzl")
+import("gen/avx256vnnigfni_microkernels.bzl")
+import("gen/avx2_microkernels.bzl")
+import("gen/avx512amx_microkernels.bzl")
+import("gen/avx512f_microkernels.bzl")
+import("gen/avx512fp16_microkernels.bzl")
+import("gen/avx512skx_microkernels.bzl")
+import("gen/avx512vbmi_microkernels.bzl")
+import("gen/avx512vnni_microkernels.bzl")
+import("gen/avx512vnnigfni_microkernels.bzl")
+import("gen/avx_microkernels.bzl")
+import("gen/avxvnni_microkernels.bzl")
+import("gen/avxvnniint8_microkernels.bzl")
+import("gen/f16c_microkernels.bzl")
+import("gen/fma3_microkernels.bzl")
+import("gen/sse2_microkernels.bzl")
+import("gen/sse2fma_microkernels.bzl")
+import("gen/sse41_microkernels.bzl")
+import("gen/sse_microkernels.bzl")
+import("gen/sse_microkernels.bzl")
+import("gen/ssse3_microkernels.bzl")
 
 # Other code from Bazel covering the raw sources
-import("//build_srcs.bzl")
+import("build_srcs.bzl")
 
 # Argument declarations for XNNPACK. This will expand to offer
 # more granular support for each architecture, as appropriate.
@@ -78,7 +78,8 @@ import("//build_srcs.bzl")
 # `gn args --list out/Default`
 declare_args() {
   # Enables SSE4.1 support for x86 processors
-  xnnpack_enable_sse41 = target_cpu == "x64" || target_cpu == "x86"
+  xnnpack_enable_sse41 =
+      target_cpu == "x64" || target_cpu == "x86" || build_with_chromium
 
   # Enables F16C support for x86 processors
   xnnpack_enable_f16c = target_cpu == "x64" || target_cpu == "x86"
@@ -137,26 +138,18 @@ config("xnnpack_private_config") {
     "-Wno-extra-semi",
     "-Wno-sign-compare",
     "-Wno-unreachable-code-break",
-    "-Wno-unused-function",
     "-Wno-shadow",
     "-Wno-gcc-compat",
+    "-Wno-unreachable-code-return",
   ]
-
-  if (target_cpu == "x86" || target_cpu == "x64") {
-    cflags += [ "-mssse3" ]
-  }
-  configs = [ ":xnnpack_public_config" ]
-}
-
-config("xnnpack_public_config") {
   include_dirs = [
     # TODO: may wish to trim some of these
     "//third_party/pthreadpool/src/include",
-    "src/deps/clog/include",
     "src/include",
     "src/src",
     "include",
     "src",
+    ".",
   ]
 
   defines = [
@@ -172,7 +165,7 @@ config("xnnpack_public_config") {
 
   # Define support for all features on every platform possible,
   # unless there's a good reason to switch them off.
-  if (target_cpu == "arm64") {
+  if (current_cpu == "arm64") {
     # Define the core Armv8
     defines += [
       "XNN_ENABLE_ARM_BF16=1",
@@ -200,14 +193,14 @@ config("xnnpack_public_config") {
     } else {
       defines += [ "XNN_ENABLE_ARM_SME2=0" ]
     }
-  } else if (target_cpu == "x64" || target_cpu == "x86") {
+  } else if (current_cpu == "x64" || current_cpu == "x86") {
     # x64 support baseline, which is SSSE3 and below to match Chromium.
     defines += [
       "XNN_ENABLE_SSE=1",
       "XNN_ENABLE_SSE2=1",
       "XNN_ENABLE_SSSE3=1",
     ]
-    cflags = [ "-mssse3" ]
+    cflags += [ "-mssse3" ]
 
     if (xnnpack_enable_avx) {
       defines += [ "XNN_ENABLE_AVX=1" ]
@@ -293,9 +286,13 @@ config("xnnpack_public_config") {
     # Mark assembly files with BTI support
     asmflags = [ "-mmark-bti-property" ]
   }
+}
 
-  configs = [ "//build/config/compiler:no_chromium_code" ]
-  configs += [ "//build/config/sanitizers:cfi_icall_generalize_pointers" ]
+config("xnnpack_public_config") {
+  include_dirs = [
+    "include",
+    ".",
+  ]
 }
 
 source_set("xnnpack_headers") {
@@ -403,7 +400,7 @@ xnnpack_source_set("microkernel_defs") {
   public_deps = [ ":xnnpack_headers" ]
 }
 
-if (target_cpu == "arm64") {
+if (current_cpu == "arm64") {
   xnnpack_source_set("neon_asm_microkernels") {
     deps = [
       ":microkernel_defs",
@@ -508,14 +505,18 @@ if (target_cpu == "arm64") {
     ]
   }
 
-  source_set("neon_aarch64_microkernels") {
+  xnnpack_source_set("neon_aarch64_microkernels") {
     deps = [
       ":microkernel_defs",
       ":microkernel_headers",
-      "//third_party/pthreadpool:pthreadpool_standalone",
     ]
     if (xnnpack_enable_arm_kleidiai) {
       deps += [ "//third_party/kleidiai" ]
+    }
+    if (!build_with_chromium) {
+      deps += [ "//third_party/pthreadpool:pthreadpool_standalone" ]
+    } else {
+      deps += [ "//third_party/pthreadpool" ]
     }
     sources = ALL_NEON_AARCH64_MICROKERNEL_SRCS
   }
@@ -557,7 +558,7 @@ if (target_cpu == "arm64") {
   }
 }
 
-if (target_cpu == "x64" || target_cpu == "x86") {
+if (current_cpu == "x64" || current_cpu == "x86") {
   xnnpack_source_set("avxvnni_microkernels") {
     deps = [
       ":microkernel_defs",
@@ -603,7 +604,7 @@ if (target_cpu == "x64" || target_cpu == "x86") {
     sources += ALL_AVX512SKX_MICROKERNEL_SRCS
     sources += ALL_AVX512VBMI_MICROKERNEL_SRCS
 
-    if (target_cpu == "x64") {
+    if (current_cpu == "x64") {
       # VNNI extensions are only supported for x64
       sources += ALL_AVX256VNNI_MICROKERNEL_SRCS
       sources += ALL_AVX256VNNIGFNI_MICROKERNEL_SRCS
@@ -621,7 +622,7 @@ if (target_cpu == "x64" || target_cpu == "x86") {
       "-mgfni",
       "-mavx512vbmi",
     ]
-    if (target_cpu == "x64") {
+    if (current_cpu == "x64") {
       cflags += [
         "-mavxvnniint8",
         "-mavxvnni",
@@ -712,6 +713,7 @@ xnnpack_source_set("xnnpack") {
     "src/reference/packing.cc",
     "src/reference/unary-elementwise.cc",
     "src/sanitizers.c",
+    "src/xnnpack/fingerprint_check.c",
     "src/xx-pad/xx-pad.inc",
   ]
   public_deps = [ ":xnnpack_headers" ]
@@ -721,17 +723,22 @@ xnnpack_source_set("xnnpack") {
     ":microkernel_defs",
     ":microkernel_headers",
     ":operators",
+    ":scalar_microkernels",
     ":subgraph",
     ":table",
     "//third_party/fxdiv",
-    "//third_party/pthreadpool:pthreadpool_standalone",
   ]
+  if (!build_with_chromium) {
+    deps += [ "//third_party/pthreadpool:pthreadpool_standalone" ]
+  } else {
+    deps += [ "//third_party/pthreadpool" ]
+  }
   if (xnnpack_enable_arm_kleidiai) {
     deps += [ "//third_party/kleidiai" ]
   }
   use_libcxx_modules = false
   cflags = []
-  if (target_cpu == "arm64") {
+  if (current_cpu == "arm64") {
     sources += ALL_NEON_MICROKERNEL_SRCS
     sources += ALL_NEONFMA_AARCH64_MICROKERNEL_SRCS
     sources += ALL_NEONFMA_MICROKERNEL_SRCS
@@ -755,7 +762,7 @@ xnnpack_source_set("xnnpack") {
     if (xnnpack_enable_arm_sme2) {
       deps += [ ":sme2_microkernels" ]
     }
-  } else if (target_cpu == "x64" || target_cpu == "x86") {
+  } else if (current_cpu == "x64" || current_cpu == "x86") {
     if (xnnpack_enable_avx) {
       deps += [ ":avx_microkernels" ]
     }
@@ -771,7 +778,7 @@ xnnpack_source_set("xnnpack") {
     if (xnnpack_enable_avx512) {
       deps += [ ":avx512_microkernels" ]
     }
-    if (target_cpu == "x64") {
+    if (current_cpu == "x64") {
       sources += AMD64_ASM_MICROKERNEL_SRCS
     }
     sources += ALL_SSE_MICROKERNEL_SRCS
@@ -1134,104 +1141,110 @@ xnnpack_test("operators") {
 #
 # Benchmarks
 #
-xnnpack_source_set("benchmark_test_support") {
-  testonly = true
-  deps = [
-    ":microkernel_headers",
-    ":test_support",
-    ":xnnpack_headers",
-    "//third_party/cpuinfo",
-    "//third_party/google_benchmark_chrome:google_benchmark",
-    "//third_party/googletest:gtest",
-    "//third_party/pthreadpool:pthreadpool_standalone",
-  ]
-  sources = [
-    "bench/bgemm.h",
-    "bench/conv.h",
-    "bench/dconv.h",
-    "bench/dwconv.h",
-    "bench/gemm-benchmark.cc",
-    "bench/gemm-benchmark.h",
-    "bench/gemm.h",
-    "bench/packq-benchmark.cc",
-    "bench/packq-benchmark.h",
-    "bench/packw-benchmark.h",
+if (!build_with_chromium) {
+  # XNNPACK's benchmarks don't seem to build agains the Google benchmark in
+  # Chromium. TODO: figure out why.
+  xnnpack_source_set("benchmark_test_support") {
+    testonly = true
+    deps = [
+      ":microkernel_headers",
+      ":test_support",
+      ":xnnpack_headers",
+      "//third_party/cpuinfo",
+      "//third_party/google_benchmark",
+      "//third_party/googletest:gtest",
+    ]
+    if (!build_with_chromium) {
+      deps += [ "//third_party/pthreadpool:pthreadpool_standalone" ]
+    }
+    sources = [
+      "bench/bgemm.h",
+      "bench/conv.h",
+      "bench/dconv.h",
+      "bench/dwconv.h",
+      "bench/gemm-benchmark.cc",
+      "bench/gemm-benchmark.h",
+      "bench/gemm.h",
+      "bench/packq-benchmark.cc",
+      "bench/packq-benchmark.h",
+      "bench/packw-benchmark.h",
+      "bench/spmm.h",
+      "bench/utils.cc",
+      "bench/utils.h",
+    ]
+  }
+
+  BENCHMARKS = [
+    "bench/bf16-gemm.cc",
+    "bench/f16-conv-hwc2chw.cc",
+    "bench/f16-dwconv.cc",
+    "bench/f16-dwconv2d-chw.cc",
+    "bench/f16-raddstoreexpminusmax.cc",
+    "bench/f16-vcmul.cc",
+    "bench/f32-conv-hwc.cc",
+    "bench/f32-conv-hwc2chw.cc",
+    "bench/f32-dwconv.cc",
+    "bench/f32-dwconv2d-chw.cc",
+    "bench/f32-raddexpminusmax.cc",
+    "bench/f32-raddextexp.cc",
+    "bench/f32-raddstoreexpminusmax.cc",
+    "bench/f32-softmax.cc",
+    "bench/f32-vcmul.cc",
+    "bench/f32-vscaleexpminusmax.cc",
+    "bench/f32-vscaleextexp.cc",
+    "bench/pf16-gemm-minmax.cc",
+    "bench/pf32-gemm-minmax.cc",
+    "bench/pqs8-qc8w-gemm-minmax.cc",
+    "bench/qb4-packw.cc",
+    "bench/qd8-f16-qb4w-gemm.cc",
+    "bench/qd8-f16-qc4w-gemm.cc",
+    "bench/qd8-f16-qc8w-gemm.cc",
+    "bench/qd8-f32-qb4w-gemm.cc",
+    "bench/qd8-f32-qc2w-gemm.cc",
+    "bench/qd8-f32-qc4w-gemm.cc",
+    "bench/qd8-f32-qc8w-gemm.cc",
+    "bench/qp8-f32-qb4w-gemm.cc",
+    "bench/qp8-f32-qc4w-gemm.cc",
+    "bench/qp8-f32-qc8w-gemm.cc",
+    "bench/qs8-dwconv.cc",
+    "bench/qs8-gemm.cc",
+    "bench/qs8-packw.cc",
+    "bench/qs8-qc2w-gemm-fp32.cc",
+    "bench/qs8-qc4w-gemm-fp32.cc",
+    "bench/qs8-qc4w-packw.cc",
+    "bench/qs8-qc8w-gemm-fp32.cc",
+    "bench/qu8-gemm-fp32.cc",
+    "bench/qu8-gemm-rndnu.cc",
+    "bench/qu8-gemm.cc",
+    "bench/rdminmax.cc",
+    "bench/rdsum.cc",
+    "bench/rdsum2.cc",
+    "bench/rminmax.cc",
+    "bench/rsum.cc",
+    "bench/rsum2.cc",
+    "bench/spmm.cc",
     "bench/spmm.h",
-    "bench/utils.cc",
-    "bench/utils.h",
+    "bench/vbinary.cc",
+    "bench/vunary.cc",
+    "bench/x16-packw.cc",
+    "bench/x16-x32-packw.cc",
+    "bench/x32-packw.cc",
+    "bench/x8-lut.cc",
+    "bench/x8-packq.cc",
+    "bench/x8-packw.cc",
+    "bench/xN-transposec.cc",
+    "bench/xx-transposev.cc",
   ]
-}
 
-BENCHMARKS = [
-  "bench/bf16-gemm.cc",
-  "bench/f16-conv-hwc2chw.cc",
-  "bench/f16-dwconv.cc",
-  "bench/f16-dwconv2d-chw.cc",
-  "bench/f16-raddstoreexpminusmax.cc",
-  "bench/f16-vcmul.cc",
-  "bench/f32-conv-hwc.cc",
-  "bench/f32-conv-hwc2chw.cc",
-  "bench/f32-dwconv.cc",
-  "bench/f32-dwconv2d-chw.cc",
-  "bench/f32-raddexpminusmax.cc",
-  "bench/f32-raddextexp.cc",
-  "bench/f32-raddstoreexpminusmax.cc",
-  "bench/f32-softmax.cc",
-  "bench/f32-vcmul.cc",
-  "bench/f32-vscaleexpminusmax.cc",
-  "bench/f32-vscaleextexp.cc",
-  "bench/pf16-gemm-minmax.cc",
-  "bench/pf32-gemm-minmax.cc",
-  "bench/pqs8-qc8w-gemm-minmax.cc",
-  "bench/qb4-packw.cc",
-  "bench/qd8-f16-qb4w-gemm.cc",
-  "bench/qd8-f16-qc4w-gemm.cc",
-  "bench/qd8-f16-qc8w-gemm.cc",
-  "bench/qd8-f32-qb4w-gemm.cc",
-  "bench/qd8-f32-qc2w-gemm.cc",
-  "bench/qd8-f32-qc4w-gemm.cc",
-  "bench/qd8-f32-qc8w-gemm.cc",
-  "bench/qp8-f32-qb4w-gemm.cc",
-  "bench/qp8-f32-qc4w-gemm.cc",
-  "bench/qp8-f32-qc8w-gemm.cc",
-  "bench/qs8-dwconv.cc",
-  "bench/qs8-gemm.cc",
-  "bench/qs8-packw.cc",
-  "bench/qs8-qc2w-gemm-fp32.cc",
-  "bench/qs8-qc4w-gemm-fp32.cc",
-  "bench/qs8-qc4w-packw.cc",
-  "bench/qs8-qc8w-gemm-fp32.cc",
-  "bench/qu8-gemm-fp32.cc",
-  "bench/qu8-gemm-rndnu.cc",
-  "bench/qu8-gemm.cc",
-  "bench/rdminmax.cc",
-  "bench/rdsum.cc",
-  "bench/rdsum2.cc",
-  "bench/rminmax.cc",
-  "bench/rsum.cc",
-  "bench/rsum2.cc",
-  "bench/spmm.cc",
-  "bench/spmm.h",
-  "bench/vbinary.cc",
-  "bench/vunary.cc",
-  "bench/x16-packw.cc",
-  "bench/x16-x32-packw.cc",
-  "bench/x32-packw.cc",
-  "bench/x8-lut.cc",
-  "bench/x8-packq.cc",
-  "bench/x8-packw.cc",
-  "bench/xN-transposec.cc",
-  "bench/xx-transposev.cc",
-]
+  foreach(benchmark_src, BENCHMARKS) {
+    # Strip the file extension and leading directory, convert '-' to '_'
+    base_name = string_replace(benchmark_src, "bench/", "")
+    bench_name = string_replace(base_name, ".cc", "")
+    name = string_replace(bench_name, "-", "_")
 
-foreach(benchmark_src, BENCHMARKS) {
-  # Strip the file extension and leading directory, convert '-' to '_'
-  base_name = string_replace(benchmark_src, "bench/", "")
-  bench_name = string_replace(base_name, ".cc", "")
-  name = string_replace(bench_name, "-", "_")
-
-  # Define the benchmark
-  xnnpack_benchmark(name) {
-    sources = [ benchmark_src ]
+    # Define the benchmark
+    xnnpack_benchmark(name) {
+      sources = [ benchmark_src ]
+    }
   }
 }

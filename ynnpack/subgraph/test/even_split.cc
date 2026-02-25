@@ -21,9 +21,11 @@
 #include "ynnpack/include/ynnpack.h"
 #include "ynnpack/subgraph/test/subgraph_builder.h"
 
-namespace ynn {
-
+// This needs to be in the global namespace for argument dependent lookup to
+// work.
 using ::ynn::to_string;  // NOLINT(misc-unused-using-decls)
+
+namespace ynn {
 
 struct Param {
   using TupleT = std::tuple<int, int>;

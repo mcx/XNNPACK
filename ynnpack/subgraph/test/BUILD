@@ -41,6 +41,7 @@ cc_library(
         "//ynnpack:ynnpack_h",
         "//ynnpack/subgraph",
         "@com_google_googletest//:gtest",
+        "@slinky//slinky/base",
     ],
 )
 

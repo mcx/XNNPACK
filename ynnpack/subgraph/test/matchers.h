@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <ostream>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -20,6 +21,15 @@
 #include "ynnpack/include/ynnpack.h"
 #include "ynnpack/subgraph/subgraph.h"
 #include "slinky/base/span.h"
+
+// This causes gmock to print the subgraph instead of just a hex encoded dump of
+// the memory. It needs to be in the global namespace for argument dependent
+// lookup to work.
+inline std::ostream& operator<<(std::ostream& os, const ynn_subgraph& g) {
+  os << "subgraph:" << std::endl;
+  g.dump(os);
+  return os;
+}
 
 namespace ynn {
 

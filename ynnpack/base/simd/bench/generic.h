@@ -40,11 +40,7 @@ YNN_NO_INLINE static void store_no_inline(T* dst, vec<T, N> v, size_t n) {
 }
 
 template <typename scalar, size_t N, typename Init>
-static void BM_partial_load(benchmark::State& state, uint64_t arch) {
-  if (!is_arch_supported(arch)) {
-    state.SkipWithError("Unsupported hardware");
-    return;
-  }
+static void BM_partial_load(benchmark::State& state) {
   const size_t n = state.range(0);
   const size_t align = state.range(1);
   using vector = vec<scalar, N>;
@@ -63,11 +59,7 @@ static void BM_partial_load(benchmark::State& state, uint64_t arch) {
 }
 
 template <typename scalar, size_t N>
-static void BM_partial_store(benchmark::State& state, uint64_t arch) {
-  if (!is_arch_supported(arch)) {
-    state.SkipWithError("Unsupported hardware");
-    return;
-  }
+static void BM_partial_store(benchmark::State& state) {
   const size_t n = state.range(0);
   const size_t align = state.range(1);
   using vector = vec<scalar, N>;
@@ -94,16 +86,16 @@ static void partial_load_store_params(benchmark::Benchmark* b) {
 
 #define BENCH_PARTIAL_LOAD_STORE(arch, type, N)                               \
   void BM_partial_load_##type##x##N##_##arch(benchmark::State& state) {       \
-    BM_partial_load<type, N, vec<type, N>>(state, arch_flag::arch);           \
+    BM_partial_load<type, N, vec<type, N>>(state);                            \
   }                                                                           \
   void BM_partial_load_zero_##type##x##N##_##arch(benchmark::State& state) {  \
-    BM_partial_load<type, N, zeros<N>>(state, arch_flag::arch);               \
+    BM_partial_load<type, N, zeros<N>>(state);                                \
   }                                                                           \
   void BM_partial_load_undef_##type##x##N##_##arch(benchmark::State& state) { \
-    BM_partial_load<type, N, undef<N>>(state, arch_flag::arch);               \
+    BM_partial_load<type, N, undef<N>>(state);                                \
   }                                                                           \
   void BM_partial_store_##type##x##N##_##arch(benchmark::State& state) {      \
-    BM_partial_store<type, N>(state, arch_flag::arch);                        \
+    BM_partial_store<type, N>(state);                                         \
   }                                                                           \
   BENCHMARK(BM_partial_load_##type##x##N##_##arch)                            \
       ->Apply(partial_load_store_params<N>);                                  \
@@ -120,12 +112,7 @@ YNN_NO_INLINE static T fma_no_inline(T a, T b, T acc) {
 }
 
 template <typename scalar, size_t N>
-static void BM_fma(benchmark::State& state, uint64_t arch) {
-  if (!is_arch_supported(arch)) {
-    state.SkipWithError("Unsupported hardware");
-    return;
-  }
-
+static void BM_fma(benchmark::State& state) {
   using vector = vec<scalar, N>;
 
   vector a{1};
@@ -140,10 +127,10 @@ static void BM_fma(benchmark::State& state, uint64_t arch) {
   }
 }
 
-#define BENCH_FMA(arch, type, N)                                      \
+#define BENCH_FMA(arch, type, N)                               \
   void BM_fma_##type##x##N##_##arch(benchmark::State& state) { \
-    BM_fma<type, N>(state, arch_flag::arch);                          \
-  }                                                                   \
+    BM_fma<type, N>(state);                                    \
+  }                                                            \
   BENCHMARK(BM_fma_##type##x##N##_##arch);
 
 }  // namespace simd

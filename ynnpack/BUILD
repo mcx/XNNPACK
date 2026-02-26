@@ -91,6 +91,15 @@ selects.config_setting_group(
 )
 
 selects.config_setting_group(
+    name = "not_apple",
+    match_any = [
+        "@platforms//os:linux",
+        "@platforms//os:android",
+        "@platforms//os:windows",
+    ],
+)
+
+selects.config_setting_group(
     name = "msvc",
     match_any = [
         "@rules_cc//cc/compiler:clang-cl",
@@ -159,6 +168,16 @@ define_build_option(
 define_build_option(
     name = "ynn_enable_arm64_sme2",
     default_all = [":ynn_enable_arm64_sme"],
+)
+
+define_build_option(
+    name = "ynn_enable_arm64_sve",
+    default_all = [
+        ":ynn_enable_arm64",
+        # Apple's compilers appear to generate SVE code in *any* function, regardless of whether
+        # the function actually uses it, which causes us to execute SVE code on non-apple targets.
+        ":not_apple",
+    ],
 )
 
 define_build_option(

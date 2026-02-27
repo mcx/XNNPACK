@@ -353,6 +353,9 @@ xnnpack_source_set("operators") {
     "src/operators/fingerprint_id.c",
     "src/operators/fingerprint_id.h",
   ]
+  if (!build_with_chromium) {
+    deps += [ "//third_party/pthreadpool:pthreadpool_standalone" ]
+  }
 }
 
 xnnpack_source_set("subgraph") {
@@ -512,11 +515,6 @@ if (current_cpu == "arm64") {
     ]
     if (xnnpack_enable_arm_kleidiai) {
       deps += [ "//third_party/kleidiai" ]
-    }
-    if (!build_with_chromium) {
-      deps += [ "//third_party/pthreadpool:pthreadpool_standalone" ]
-    } else {
-      deps += [ "//third_party/pthreadpool" ]
     }
     sources = ALL_NEON_AARCH64_MICROKERNEL_SRCS
   }
@@ -728,11 +726,6 @@ xnnpack_source_set("xnnpack") {
     ":table",
     "//third_party/fxdiv",
   ]
-  if (!build_with_chromium) {
-    deps += [ "//third_party/pthreadpool:pthreadpool_standalone" ]
-  } else {
-    deps += [ "//third_party/pthreadpool" ]
-  }
   if (xnnpack_enable_arm_kleidiai) {
     deps += [ "//third_party/kleidiai" ]
   }

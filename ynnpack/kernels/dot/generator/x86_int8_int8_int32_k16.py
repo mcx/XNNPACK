@@ -8,13 +8,13 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=invalid-name
 
-from ynnpack.kernels.dot.generator.x86 import x86_avx
+from ynnpack.kernels.dot.generator.x86 import x86_avx512
 
 
 # In this generator, we tell the base class that we are generating 128-bit
 # tiles, but we accumulate in 512-bit vectors.
-class x86_avx512_int8_int8_int32_k16(x86_avx):
-  """Generates tile_k=16 avx512 dot kernels."""
+class x86_avx512_int8_int8_int32_k16(x86_avx512):
+  """Generates tile_k=16 avx512bw dot kernels."""
 
   def __init__(self, arch="avx512"):
     super().__init__(

@@ -111,9 +111,13 @@ class x86(dot_base):
       result += indent(self.add_c_block_vectors(n), "  ")
       result += "\n}\n"
       n //= 2
-    result += "if (N > 0) {\n"
-    result += indent(self.add_c_block_vector_tail(), "  ")
-    result += "\n}\n"
+    if self.block_shape[1] > self.bits // 32:
+      result += "if (N > 0) {\n"
+      result += indent(self.add_c_block_vector_tail(), "  ")
+      result += "\n}\n"
+    else:
+      result += "assert(N > 0);\n"
+      result += self.add_c_block_vector_tail()
 
     return result
 
@@ -222,7 +226,9 @@ class x86_avx512(x86):
     result = ""
     result += f"assert(N < {self.bits//32});\n"
 
-    result += f"const __mmask16 mask = _cvtu32_mask16((uint32_t) (((UINT64_C(1) << N) - 1) >> 0));\n"
+    result += (
+        "const __mmask16 mask = _cvtu32_mask16((uint32_t) ((1 << N) - 1));\n"
+    )
 
     add_c_tiles = ""
     # Load all of the output and add it, before writing anything.

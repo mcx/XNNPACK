@@ -170,8 +170,12 @@ class arm_neon(dot_base):
       result += indent(self.add_c_block_vectors(n), "  ")
       result += "\n}\n"
       n //= 2
-    result += "if (N > 0) {\n"
-    result += indent(self.add_c_block_vector_tail(), "  ")
-    result += "\n}\n"
+    if self.block_shape[1] > self.tile_shape[1]:
+      result += "if (N > 0) {\n"
+      result += indent(self.add_c_block_vector_tail(), "  ")
+      result += "\n}\n"
+    else:
+      result += "assert(N > 0);\n"
+      result += self.add_c_block_vector_tail()
 
     return result

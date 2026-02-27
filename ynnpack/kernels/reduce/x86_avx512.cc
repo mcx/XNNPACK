@@ -148,23 +148,57 @@ using simd::u8x64;
 using f16x32_rvar = float16_wrapper<f16x32, s16x32>;
 using bf16x32_rvar = float16_wrapper<bf16x32, s16x32>;
 
-MIN_MAX_KERNEL(min_max_bf16_4x32_avx512bw, bf16x32_rvar, bf16x32_rvar, bfloat16,
+MIN_MAX_KERNEL(min_max_fp32_4x16_avx512, f32x16, f32x16, float, 16);
+MIN_MAX_KERNEL(min_max_bf16_4x32_avx512, bf16x32_rvar, bf16x32_rvar, bfloat16,
                32);
-MIN_MAX_KERNEL(min_max_fp16_4x32_avx512bw, f16x32_rvar, f16x32_rvar, half, 32);
-MIN_MAX_KERNEL(min_max_uint8_4x64_avx512bw, u8x64, u8x64, uint8_t, 64);
-MIN_MAX_KERNEL(min_max_int8_4x64_avx512bw, s8x64, s8x64, int8_t, 64);
+MIN_MAX_KERNEL(min_max_fp16_4x32_avx512, f16x32_rvar, f16x32_rvar, half, 32);
+MIN_MAX_KERNEL(min_max_uint8_4x64_avx512, u8x64, u8x64, uint8_t, 64);
+MIN_MAX_KERNEL(min_max_int8_4x64_avx512, s8x64, s8x64, int8_t, 64);
 
-MIN_MAX_KERNEL(min_bf16_4x32_avx512bw, bf16x32_rvar, dummy_t, bfloat16, 32);
-MIN_MAX_KERNEL(min_fp16_4x32_avx512bw, f16x32_rvar, dummy_t, half, 32);
-MIN_MAX_KERNEL(min_uint8_4x64_avx512bw, u8x64, dummy_t, uint8_t, 64);
-MIN_MAX_KERNEL(min_int8_4x64_avx512bw, s8x64, dummy_t, int8_t, 64);
+MIN_MAX_KERNEL(min_fp32_4x16_avx512, f32x16, dummy_t, float, 16);
+MIN_MAX_KERNEL(min_bf16_4x32_avx512, bf16x32_rvar, dummy_t, bfloat16, 32);
+MIN_MAX_KERNEL(min_fp16_4x32_avx512, f16x32_rvar, dummy_t, half, 32);
+MIN_MAX_KERNEL(min_uint8_4x64_avx512, u8x64, dummy_t, uint8_t, 64);
+MIN_MAX_KERNEL(min_int8_4x64_avx512, s8x64, dummy_t, int8_t, 64);
 
-MIN_MAX_KERNEL(max_bf16_4x32_avx512bw, dummy_t, bf16x32_rvar, bfloat16, 32);
-MIN_MAX_KERNEL(max_fp16_4x32_avx512bw, dummy_t, f16x32_rvar, half, 32);
-MIN_MAX_KERNEL(max_uint8_4x64_avx512bw, dummy_t, u8x64, uint8_t, 64);
-MIN_MAX_KERNEL(max_int8_4x64_avx512bw, dummy_t, s8x64, int8_t, 64);
+MIN_MAX_KERNEL(max_fp32_4x16_avx512, dummy_t, f32x16, float, 16);
+MIN_MAX_KERNEL(max_bf16_4x32_avx512, dummy_t, bf16x32_rvar, bfloat16, 32);
+MIN_MAX_KERNEL(max_fp16_4x32_avx512, dummy_t, f16x32_rvar, half, 32);
+MIN_MAX_KERNEL(max_uint8_4x64_avx512, dummy_t, u8x64, uint8_t, 64);
+MIN_MAX_KERNEL(max_int8_4x64_avx512, dummy_t, s8x64, int8_t, 64);
 
-void sum_int8_int32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
+void sum_fp32_avx512(size_t n, size_t k3, size_t k2, size_t k1,
+                      size_t a_stride_n, size_t a_stride_k3,
+                      size_t a_stride_k2, const void* a, size_t, void* c) {
+  if (k1 == 1 && a_stride_n == sizeof(float)) {
+    stream_reduce<sum_accumulator_k1_1<f32x16>, float, float>(
+        n, k3, k2, a_stride_k3, a_stride_k2, reinterpret_cast<const float*>(a),
+        /*C_stride_m=*/0, reinterpret_cast<float*>(c));
+  } else {
+    tiled_reduce<sum_accumulator_fp32<>, float, float>(
+        n, k3, k2, k1, a_stride_n, a_stride_k3, a_stride_k2,
+        reinterpret_cast<const float*>(a),
+        /*C_stride_m=*/0, reinterpret_cast<float*>(c));
+  }
+}
+
+void sum_squared_fp32_avx512(size_t n, size_t k3, size_t k2, size_t k1,
+                              size_t a_stride_n, size_t a_stride_k3,
+                              size_t a_stride_k2, const void* a, size_t,
+                              void* c) {
+  if (k1 == 1 && a_stride_n == sizeof(float)) {
+    stream_reduce<sum_accumulator_k1_1<f32x16, Square>, float, float>(
+        n, k3, k2, a_stride_k3, a_stride_k2, reinterpret_cast<const float*>(a),
+        /*C_stride_m=*/0, reinterpret_cast<float*>(c));
+  } else {
+    tiled_reduce<sum_accumulator_fp32<1, Square>, float, float>(
+        n, k3, k2, k1, a_stride_n, a_stride_k3, a_stride_k2,
+        reinterpret_cast<const float*>(a), /*C_stride_m=*/0,
+        reinterpret_cast<float*>(c));
+  }
+}
+
+void sum_int8_int32_avx512(size_t n, size_t k3, size_t k2, size_t k1,
                              size_t a_stride_n, size_t a_stride_k3,
                              size_t a_stride_k2, const void* a, size_t,
                              void* c) {
@@ -180,7 +214,7 @@ void sum_int8_int32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
   }
 }
 
-void sum_uint8_int32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
+void sum_uint8_int32_avx512(size_t n, size_t k3, size_t k2, size_t k1,
                               size_t a_stride_n, size_t a_stride_k3,
                               size_t a_stride_k2, const void* a, size_t,
                               void* c) {
@@ -197,7 +231,7 @@ void sum_uint8_int32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
   }
 }
 
-void sum_squared_int8_int32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
+void sum_squared_int8_int32_avx512(size_t n, size_t k3, size_t k2, size_t k1,
                                      size_t a_stride_n, size_t a_stride_k3,
                                      size_t a_stride_k2, const void* a, size_t,
                                      void* c) {
@@ -213,7 +247,7 @@ void sum_squared_int8_int32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
   }
 }
 
-void sum_squared_uint8_int32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
+void sum_squared_uint8_int32_avx512(size_t n, size_t k3, size_t k2, size_t k1,
                                       size_t a_stride_n, size_t a_stride_k3,
                                       size_t a_stride_k2, const void* a, size_t,
                                       void* c) {
@@ -230,7 +264,7 @@ void sum_squared_uint8_int32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
   }
 }
 
-void sum_bf16_fp32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
+void sum_bf16_fp32_avx512(size_t n, size_t k3, size_t k2, size_t k1,
                             size_t a_stride_n, size_t a_stride_k3,
                             size_t a_stride_k2, const void* a, size_t,
                             void* c) {
@@ -247,7 +281,7 @@ void sum_bf16_fp32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
   }
 }
 
-void sum_squared_bf16_fp32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
+void sum_squared_bf16_fp32_avx512(size_t n, size_t k3, size_t k2, size_t k1,
                                     size_t a_stride_n, size_t a_stride_k3,
                                     size_t a_stride_k2, const void* a, size_t,
                                     void* c) {
@@ -264,7 +298,7 @@ void sum_squared_bf16_fp32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
   }
 }
 
-void sum_fp16_fp32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
+void sum_fp16_fp32_avx512(size_t n, size_t k3, size_t k2, size_t k1,
                             size_t a_stride_n, size_t a_stride_k3,
                             size_t a_stride_k2, const void* a, size_t,
                             void* c) {
@@ -280,7 +314,7 @@ void sum_fp16_fp32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
   }
 }
 
-void sum_squared_fp16_fp32_avx512bw(size_t n, size_t k3, size_t k2, size_t k1,
+void sum_squared_fp16_fp32_avx512(size_t n, size_t k3, size_t k2, size_t k1,
                                     size_t a_stride_n, size_t a_stride_k3,
                                     size_t a_stride_k2, const void* a, size_t,
                                     void* c) {

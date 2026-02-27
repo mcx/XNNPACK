@@ -1,3 +1,8 @@
+# Copyright 2025 Google LLC
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Specializations for int8 x86 dot kernel generators."""
 
 # pylint: disable=missing-class-docstring
@@ -5,7 +10,7 @@
 
 from ynnpack.kernels.dot.generator.x86 import x86
 from ynnpack.kernels.dot.generator.x86 import x86_avx
-from ynnpack.kernels.dot.generator.x86 import x86_avx512f
+from ynnpack.kernels.dot.generator.x86 import x86_avx512
 
 
 class x86_int8_int8_int32_k1(x86):
@@ -61,9 +66,9 @@ using __m64i = void;
 """
 
 
-class x86_avx512bw_int8_int8_int32_k1(x86_avx512f, x86_int8_int8_int32_k1):
+class x86_avx512_int8_int8_int32_k1(x86_avx512, x86_int8_int8_int32_k1):
 
-  def __init__(self, arch="avx512bw", vector_bits=512):
+  def __init__(self, arch="avx512", vector_bits=512):
     super().__init__(
         arch, "int8_int8_int32", "int32_t", vector_bits, tile_shape=(1, 16, 1)
     )

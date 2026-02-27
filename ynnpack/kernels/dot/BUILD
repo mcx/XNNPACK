@@ -115,11 +115,11 @@ ynn_generate_src_hdr(
 )
 
 ynn_generate_src_hdr(
-    name = "x86_avx512f_fp32_k2",
+    name = "x86_avx512_fp32_k2",
     compatible_with = _COMPATIBLE_WITH,
     generator = "//ynnpack/kernels/dot/generator",
     generator_args = [
-        "x86_avx512f_fp32_k2",
+        "x86_avx512_fp32_k2",
         "dot,1x32x2",
         "dot,2x32x2",
         "dot,3x32x2",
@@ -139,8 +139,8 @@ ynn_generate_src_hdr(
         # "dot,12x8x2",
         # "dot,16x8x2",
     ],
-    output_hdr = "x86_avx512f_fp32_k2.inc",
-    output_src = "x86_avx512f_fp32_k2.cc",
+    output_hdr = "x86_avx512_fp32_k2.inc",
+    output_src = "x86_avx512_fp32_k2.cc",
 )
 
 ynn_generate_src_hdr(
@@ -183,11 +183,11 @@ ynn_generate_src_hdr(
 )
 
 ynn_generate_src_hdr(
-    name = "x86_avx512f_bf16_bf16_fp32",
+    name = "x86_avx512_bf16_bf16_fp32",
     compatible_with = _COMPATIBLE_WITH,
     generator = "//ynnpack/kernels/dot/generator",
     generator_args = [
-        "x86_avx512f_bf16_bf16_fp32",
+        "x86_avx512_bf16_bf16_fp32",
         "dot,1x64x2",
         "dot,2x64x2",
         "dot,3x64x2",
@@ -203,16 +203,16 @@ ynn_generate_src_hdr(
         "dot,12x32x2",
         "dot,16x16x2",
     ],
-    output_hdr = "x86_avx512f_bf16_bf16_fp32.inc",
-    output_src = "x86_avx512f_bf16_bf16_fp32.cc",
+    output_hdr = "x86_avx512_bf16_bf16_fp32.inc",
+    output_src = "x86_avx512_bf16_bf16_fp32.cc",
 )
 
 ynn_generate_src_hdr(
-    name = "x86_avx512f_bf16_bf16_fp32_k1",
+    name = "x86_avx512_bf16_bf16_fp32_k1",
     compatible_with = _COMPATIBLE_WITH,
     generator = "//ynnpack/kernels/dot/generator",
     generator_args = [
-        "x86_avx512f_bf16_bf16_fp32_k1",
+        "x86_avx512_bf16_bf16_fp32_k1",
         "dot,1x64x1",
         "dot,2x64x1",
         "dot,3x64x1",
@@ -228,16 +228,16 @@ ynn_generate_src_hdr(
         "dot,12x32x1",
         "dot,16x16x1",
     ],
-    output_hdr = "x86_avx512f_bf16_bf16_fp32_k1.inc",
-    output_src = "x86_avx512f_bf16_bf16_fp32_k1.cc",
+    output_hdr = "x86_avx512_bf16_bf16_fp32_k1.inc",
+    output_src = "x86_avx512_bf16_bf16_fp32_k1.cc",
 )
 
 ynn_generate_src_hdr(
-    name = "x86_avx512f_fp32",
+    name = "x86_avx512_fp32",
     compatible_with = _COMPATIBLE_WITH,
     generator = "//ynnpack/kernels/dot/generator",
     generator_args = [
-        "x86_avx512f_fp32",
+        "x86_avx512_fp32",
         "dot,1x64x1",
         "dot,2x64x1",
         "dot,3x64x1",
@@ -257,16 +257,16 @@ ynn_generate_src_hdr(
         "dot,5x16x1",
         # "dot,16x16x1",
     ],
-    output_hdr = "x86_avx512f_fp32.inc",
-    output_src = "x86_avx512f_fp32.cc",
+    output_hdr = "x86_avx512_fp32.inc",
+    output_src = "x86_avx512_fp32.cc",
 )
 
 ynn_generate_src_hdr(
-    name = "x86_avx512f_fp32_k4",
+    name = "x86_avx512_fp32_k4",
     compatible_with = _COMPATIBLE_WITH,
     generator = "//ynnpack/kernels/dot/generator",
     generator_args = [
-        "x86_avx512f_fp32_k4",
+        "x86_avx512_fp32_k4",
         "dot,1x32x4",
         "dot,2x32x4",
         "dot,3x16x4",
@@ -278,8 +278,8 @@ ynn_generate_src_hdr(
         "dot,4x4x4",
         "dot,8x4x4",
     ],
-    output_hdr = "x86_avx512f_fp32_k4.inc",
-    output_src = "x86_avx512f_fp32_k4.cc",
+    output_hdr = "x86_avx512_fp32_k4.inc",
+    output_src = "x86_avx512_fp32_k4.cc",
 )
 
 ynn_generate_src_hdr(
@@ -346,11 +346,11 @@ ynn_generate_src_hdr(
 )
 
 ynn_generate_src_hdr(
-    name = "x86_avx512f_fp16_fp16_fp32",
+    name = "x86_avx512_fp16_fp16_fp32",
     compatible_with = _COMPATIBLE_WITH,
     generator = "//ynnpack/kernels/dot/generator",
     generator_args = [
-        "x86_avx512f_fp16_fp16_fp32",
+        "x86_avx512_fp16_fp16_fp32",
         "dot,1x64x1",
         "dot,2x64x1",
         "dot,3x64x1",
@@ -370,8 +370,8 @@ ynn_generate_src_hdr(
         "dot,5x16x1",
         # "dot,16x16x1",
     ],
-    output_hdr = "x86_avx512f_fp16_fp16_fp32.inc",
-    output_src = "x86_avx512f_fp16_fp16_fp32.cc",
+    output_hdr = "x86_avx512_fp16_fp16_fp32.inc",
+    output_src = "x86_avx512_fp16_fp16_fp32.cc",
 )
 
 ynn_generate_src_hdr(
@@ -535,11 +535,11 @@ ynn_generate_src_hdr(
 )
 
 ynn_generate_src_hdr(
-    name = "x86_avx512bw_int8_int8_int32",
+    name = "x86_avx512_int8_int8_int32",
     compatible_with = _COMPATIBLE_WITH,
     generator = "//ynnpack/kernels/dot/generator",
     generator_args = [
-        "x86_avx512bw_int8_int8_int32",
+        "x86_avx512_int8_int8_int32",
         "dot,1x64x4",
         "dot,2x64x4",
         "dot,3x32x4",
@@ -549,16 +549,16 @@ ynn_generate_src_hdr(
         "dot,8x16x4",
         "dot,12x16x4",
     ],
-    output_hdr = "x86_avx512bw_int8_int8_int32.inc",
-    output_src = "x86_avx512bw_int8_int8_int32.cc",
+    output_hdr = "x86_avx512_int8_int8_int32.inc",
+    output_src = "x86_avx512_int8_int8_int32.cc",
 )
 
 ynn_generate_src_hdr(
-    name = "x86_avx512bw_int8_int8_int32_k1",
+    name = "x86_avx512_int8_int8_int32_k1",
     compatible_with = _COMPATIBLE_WITH,
     generator = "//ynnpack/kernels/dot/generator",
     generator_args = [
-        "x86_avx512bw_int8_int8_int32_k1",
+        "x86_avx512_int8_int8_int32_k1",
         "dot,1x64x1",
         "dot,2x64x1",
         "dot,3x64x1",
@@ -568,16 +568,16 @@ ynn_generate_src_hdr(
         "dot,8x32x1",
         "dot,16x16x1",
     ],
-    output_hdr = "x86_avx512bw_int8_int8_int32_k1.inc",
-    output_src = "x86_avx512bw_int8_int8_int32_k1.cc",
+    output_hdr = "x86_avx512_int8_int8_int32_k1.inc",
+    output_src = "x86_avx512_int8_int8_int32_k1.cc",
 )
 
 ynn_generate_src_hdr(
-    name = "x86_avx512bw_int8_int8_int32_k16",
+    name = "x86_avx512_int8_int8_int32_k16",
     compatible_with = _COMPATIBLE_WITH,
     generator = "//ynnpack/kernels/dot/generator",
     generator_args = [
-        "x86_avx512bw_int8_int8_int32_k16",
+        "x86_avx512_int8_int8_int32_k16",
         "dot,2x16x16",
         "dot,2x8x16",
         "dot,4x8x16",
@@ -587,8 +587,8 @@ ynn_generate_src_hdr(
         "dot,6x4x16",
         "dot,8x4x16",
     ],
-    output_hdr = "x86_avx512bw_int8_int8_int32_k16.inc",
-    output_src = "x86_avx512bw_int8_int8_int32_k16.cc",
+    output_hdr = "x86_avx512_int8_int8_int32_k16.inc",
+    output_src = "x86_avx512_int8_int8_int32_k16.cc",
 )
 
 ynn_generate_src_hdr(
@@ -681,16 +681,16 @@ ynn_cc_library(
         "x86_avx2_fp32_k2.inc",
         "x86_avx2_int8_int8_int32.inc",
         "x86_avx2_int8_int8_int32_k1.inc",
+        "x86_avx512_bf16_bf16_fp32.inc",
+        "x86_avx512_bf16_bf16_fp32_k1.inc",
+        "x86_avx512_fp16_fp16_fp32.inc",
+        "x86_avx512_fp32.inc",
+        "x86_avx512_fp32_k2.inc",
+        "x86_avx512_fp32_k4.inc",
+        "x86_avx512_int8_int8_int32.inc",
+        "x86_avx512_int8_int8_int32_k1.inc",
+        "x86_avx512_int8_int8_int32_k16.inc",
         "x86_avx512bf16_bf16_bf16_fp32.inc",
-        "x86_avx512bw_int8_int8_int32.inc",
-        "x86_avx512bw_int8_int8_int32_k1.inc",
-        "x86_avx512bw_int8_int8_int32_k16.inc",
-        "x86_avx512f_bf16_bf16_fp32.inc",
-        "x86_avx512f_bf16_bf16_fp32_k1.inc",
-        "x86_avx512f_fp16_fp16_fp32.inc",
-        "x86_avx512f_fp32.inc",
-        "x86_avx512f_fp32_k2.inc",
-        "x86_avx512f_fp32_k4.inc",
         "x86_avx512vnni_uint8_int8_int32.inc",
         "x86_avx512vnni_uint8_int8_int32_k16.inc",
         "x86_avx_fp32.inc",
@@ -734,15 +734,15 @@ ynn_cc_library(
             "x86_avx2_fma3_fp32_k2.cc",
         ],
         "x86_avx512": [
-            "x86_avx512bw_int8_int8_int32_k1.cc",
-            "x86_avx512bw_int8_int8_int32.cc",
-            "x86_avx512bw_int8_int8_int32_k16.cc",
-            "x86_avx512f_fp32.cc",
-            "x86_avx512f_fp32_k2.cc",
-            "x86_avx512f_fp32_k4.cc",
-            "x86_avx512f_bf16_bf16_fp32.cc",
-            "x86_avx512f_bf16_bf16_fp32_k1.cc",
-            "x86_avx512f_fp16_fp16_fp32.cc",
+            "x86_avx512_bf16_bf16_fp32.cc",
+            "x86_avx512_bf16_bf16_fp32_k1.cc",
+            "x86_avx512_fp16_fp16_fp32.cc",
+            "x86_avx512_fp32.cc",
+            "x86_avx512_fp32_k2.cc",
+            "x86_avx512_fp32_k4.cc",
+            "x86_avx512_int8_int8_int32.cc",
+            "x86_avx512_int8_int8_int32_k1.cc",
+            "x86_avx512_int8_int8_int32_k16.cc",
         ],
         "x86_avx512bf16": ["x86_avx512bf16_bf16_bf16_fp32.cc"],
         "x86_avx512vnni": [

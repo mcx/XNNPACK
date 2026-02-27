@@ -18,12 +18,12 @@ namespace ynn {
 using ::testing::AllOf;
 using ::testing::Not;
 
-TEST(cse, simple_binary) {
+TEST(eliminate_common_subgraphs, simple_binary) {
   // Graph:
   // input_id + input_id -> temp1_id -> output1_id
   // input_id + input_id -> temp2_id -> output2_id
   //
-  // Graph after CSE:
+  // Graph after eliminate_common_subgraphs:
   // input_id + input_id -> temp1_id -> output1_id
   //                                  \ -> output2_id
   const uint32_t input_id = 0;
@@ -41,32 +41,32 @@ TEST(cse, simple_binary) {
 
   // temp1 = input + input.
   builder.AddBinary(ynn_binary_add, input_id, input_id, temp1_id);
-  // temp2 = input + input (should be CSE'd).
+  // temp2 = input + input (should be eliminate_common_subgraphs'd).
   builder.AddBinary(ynn_binary_add, input_id, input_id, temp2_id);
   builder.AddCopy(temp1_id, output1_id);
   builder.AddCopy(temp2_id, output2_id);
 
-  ynn_subgraph_t subgraph = builder.GetSubgraph();
+  ynn_subgraph& subgraph = *builder.GetSubgraph();
   ASSERT_THAT(subgraph, HasValidNodeCount(4));  // 2 add, 2 copy.
 
-  subgraph->eliminate_common_subgraphs();
-  subgraph->invalidate_dead_values();
+  subgraph.eliminate_common_subgraphs();
+  subgraph.invalidate_dead_values();
 
   ASSERT_THAT(
       subgraph,
       AllOf(HasValidNodeCount(3),  // 1 add, 2 copy.
             HasValidValueIds(input_id, temp1_id, output1_id, output2_id),
             Not(HasValidValueId(temp2_id))));
-  EXPECT_THAT(ProducerOf(output2_id, *subgraph), InputsAre(temp1_id));
-  EXPECT_THAT(ProducerOf(output1_id, *subgraph), InputsAre(temp1_id));
+  EXPECT_THAT(ProducerOf(output2_id, subgraph), InputsAre(temp1_id));
+  EXPECT_THAT(ProducerOf(output1_id, subgraph), InputsAre(temp1_id));
 }
 
-TEST(cse, chained) {
+TEST(eliminate_common_subgraphs, chained) {
   // Graph:
   // input_id -> (negate) -> b1_id -> (abs) -> c1_id -> (copy) -> output1_id
   //           \ -> (negate) -> b2_id -> (abs) -> c2_id -> (copy) -> output2_id
   //
-  // Graph after CSE:
+  // Graph after eliminate_common_subgraphs:
   // input_id -> (negate) -> b1_id -> (abs) c1_id -> (copy) -> output1_id
   //                                               \ -> (copy) -> output2_id
   const uint32_t input_id = 0;
@@ -93,28 +93,28 @@ TEST(cse, chained) {
   builder.AddCopy(c1_id, output1_id);
   builder.AddCopy(c2_id, output2_id);
 
-  ynn_subgraph_t subgraph = builder.GetSubgraph();
+  ynn_subgraph& subgraph = *builder.GetSubgraph();
   ASSERT_THAT(subgraph, HasValidNodeCount(6));  // 2 negate, 2 abs, 2 copy.
 
-  subgraph->eliminate_common_subgraphs();
-  subgraph->invalidate_dead_values();
+  subgraph.eliminate_common_subgraphs();
+  subgraph.invalidate_dead_values();
 
   ASSERT_THAT(subgraph, AllOf(HasValidNodeCount(4),  // 1 negate, 1 abs, 2 copy.
                               HasValidValueIds(input_id, b1_id, c1_id,
                                                output1_id, output2_id),
                               Not(HasValidValueIds(b2_id, c2_id))));
-  EXPECT_THAT(ProducerOf(output1_id, *subgraph), InputsAre(c1_id));
-  EXPECT_THAT(ProducerOf(output2_id, *subgraph), InputsAre(c1_id));
+  EXPECT_THAT(ProducerOf(output1_id, subgraph), InputsAre(c1_id));
+  EXPECT_THAT(ProducerOf(output2_id, subgraph), InputsAre(c1_id));
 }
 
-TEST(cse, diamond_reconvergence) {
+TEST(eliminate_common_subgraphs, diamond_reconvergence) {
   // Graph:
   // input_id -> (abs) -> a_id -> (negate) -> b_id
   //                            \ -> (negate) -> c_id
   // b_id + b_id -> d_id -> (copy) -> output1_id
   // c_id + c_id -> e_id -> (copy) -> output2_id
   //
-  // Graph after CSE:
+  // Graph after eliminate_common_subgraphs:
   // input_id -> (abs) -> a_id -> (negate) -> b_id
   // b_id + b_id -> d_id -> (copy) -> output1_id
   //                          \ -> (copy) -> output2_id
@@ -145,28 +145,28 @@ TEST(cse, diamond_reconvergence) {
   builder.AddCopy(d_id, output1_id);
   builder.AddCopy(e_id, output2_id);
 
-  ynn_subgraph_t subgraph = builder.GetSubgraph();
+  ynn_subgraph& subgraph = *builder.GetSubgraph();
   // Nodes: Abs, Negate, Negate, Add, Add, Copy, Copy = 7 nodes.
   ASSERT_THAT(subgraph, HasValidNodeCount(7));
 
-  subgraph->eliminate_common_subgraphs();
-  subgraph->invalidate_dead_values();
+  subgraph.eliminate_common_subgraphs();
+  subgraph.invalidate_dead_values();
 
   // Expected: Abs, Negate, Add, Copy, Copy = 5 nodes.
   ASSERT_THAT(subgraph, AllOf(HasValidNodeCount(5),
                               HasValidValueIds(input_id, a_id, b_id, d_id,
                                                output1_id, output2_id),
                               Not(HasValidValueIds(c_id, e_id))));
-  EXPECT_THAT(ProducerOf(output1_id, *subgraph), InputsAre(d_id));
-  EXPECT_THAT(ProducerOf(output2_id, *subgraph), InputsAre(d_id));
+  EXPECT_THAT(ProducerOf(output1_id, subgraph), InputsAre(d_id));
+  EXPECT_THAT(ProducerOf(output2_id, subgraph), InputsAre(d_id));
 }
 
-TEST(cse, no_merge_different_ops) {
+TEST(eliminate_common_subgraphs, no_merge_different_ops) {
   // Graph:
   // input_id + input_id -> t1_id -> output1_id
   // input_id * input_id -> t2_id -> output2_id
   //
-  // Graph after CSE:
+  // Graph after eliminate_common_subgraphs:
   // input_id + input_id -> t1_id -> output1_id
   // input_id * input_id -> t2_id -> output2_id
   const uint32_t input_id = 0;
@@ -187,11 +187,11 @@ TEST(cse, no_merge_different_ops) {
   builder.AddCopy(t1_id, output1_id);
   builder.AddCopy(t2_id, output2_id);
 
-  ynn_subgraph_t subgraph = builder.GetSubgraph();
+  ynn_subgraph& subgraph = *builder.GetSubgraph();
   ASSERT_THAT(subgraph, HasValidNodeCount(4));  // Add, Mul, Copy, Copy.
 
-  subgraph->eliminate_common_subgraphs();
-  subgraph->invalidate_dead_values();
+  subgraph.eliminate_common_subgraphs();
+  subgraph.invalidate_dead_values();
 
   // No change.
   EXPECT_THAT(subgraph, AllOf(HasValidNodeCount(4),
@@ -199,12 +199,12 @@ TEST(cse, no_merge_different_ops) {
                                                output1_id, output2_id)));
 }
 
-TEST(cse, no_merge_different_inputs) {
+TEST(eliminate_common_subgraphs, no_merge_different_inputs) {
   // Graph:
   // input1_id + input1_id -> t1_id -> output1_id
   // input1_id + input2_id -> t2_id -> output2_id
   //
-  // Graph after CSE:
+  // Graph after eliminate_common_subgraphs:
   // input1_id + input1_id -> t1_id -> output1_id
   // input1_id + input2_id -> t2_id -> output2_id
   const uint32_t input1_id = 0;
@@ -227,11 +227,11 @@ TEST(cse, no_merge_different_inputs) {
   builder.AddCopy(t1_id, output1_id);
   builder.AddCopy(t2_id, output2_id);
 
-  ynn_subgraph_t subgraph = builder.GetSubgraph();
+  ynn_subgraph& subgraph = *builder.GetSubgraph();
   ASSERT_THAT(subgraph, HasValidNodeCount(4));  // Add, Add, Copy, Copy.
 
-  subgraph->eliminate_common_subgraphs();
-  subgraph->invalidate_dead_values();
+  subgraph.eliminate_common_subgraphs();
+  subgraph.invalidate_dead_values();
 
   // No change.
   EXPECT_THAT(subgraph, AllOf(HasValidNodeCount(4),
@@ -239,7 +239,7 @@ TEST(cse, no_merge_different_inputs) {
                                                t2_id, output1_id, output2_id)));
 }
 
-TEST(cse, quantized) {
+TEST(eliminate_common_subgraphs, quantized) {
   // Graph:
   // input_id (q0) + input_id (q0) -> t1_id (q1) -> output1_id
   // input_id (q0) + input_id (q0) -> t2_id (q1) -> output2_id
@@ -250,7 +250,7 @@ TEST(cse, quantized) {
   //       q2 = {20, 0.1f}
   //       q3 = {20, 0.2f}
   //
-  // Graph after CSE:
+  // Graph after eliminate_common_subgraphs:
   // input_id + input_id -> t1_id -> output1_id
   //                              \ -> output2_id
   // input_id + input_id -> t3_id -> output3_id
@@ -292,11 +292,11 @@ TEST(cse, quantized) {
   builder.AddCopy(t3_id, output3_id);
   builder.AddCopy(t4_id, output4_id);
 
-  ynn_subgraph_t subgraph = builder.GetSubgraph();
+  ynn_subgraph& subgraph = *builder.GetSubgraph();
   ASSERT_THAT(subgraph, HasValidNodeCount(8));  // 4 add, 4 copy.
 
-  subgraph->eliminate_common_subgraphs();
-  subgraph->invalidate_dead_values();
+  subgraph.eliminate_common_subgraphs();
+  subgraph.invalidate_dead_values();
 
   ASSERT_THAT(subgraph,
               AllOf(HasValidNodeCount(7),  // 3 add, 4 copy.
@@ -304,10 +304,10 @@ TEST(cse, quantized) {
                                      output2_id, output3_id, output4_id),
                     Not(HasValidValueId(t2_id))));
 
-  EXPECT_THAT(ProducerOf(output1_id, *subgraph), InputsAre(t1_id));
-  EXPECT_THAT(ProducerOf(output2_id, *subgraph), InputsAre(t1_id));
-  EXPECT_THAT(ProducerOf(output3_id, *subgraph), InputsAre(t3_id));
-  EXPECT_THAT(ProducerOf(output4_id, *subgraph), InputsAre(t4_id));
+  EXPECT_THAT(ProducerOf(output1_id, subgraph), InputsAre(t1_id));
+  EXPECT_THAT(ProducerOf(output2_id, subgraph), InputsAre(t1_id));
+  EXPECT_THAT(ProducerOf(output3_id, subgraph), InputsAre(t3_id));
+  EXPECT_THAT(ProducerOf(output4_id, subgraph), InputsAre(t4_id));
 }
 
 }  // namespace ynn

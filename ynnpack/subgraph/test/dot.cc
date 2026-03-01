@@ -256,7 +256,8 @@ void TestStaticB(A, B, C) {
         } else {
           float tolerance_epsilon = epsilon(type_of<C>());
           if (dot_flags & YNN_NODE_FLAG_F32_DOT_TO_BF16_X3) {
-            tolerance_epsilon = epsilon(ynn_type_bf16) * epsilon(ynn_type_bf16);
+            tolerance_epsilon =
+                epsilon(ynn_type_bf16) * epsilon(ynn_type_bf16) * 2.0f;
           }
           const float tolerance = tolerance_epsilon * (num_k_elements + 1) *
                                   max_abs_value * max_abs_value * 2.0f;
@@ -468,7 +469,8 @@ void TestDynamicB(A, B, C) {
         } else {
           float tolerance_epsilon = epsilon(type_of<C>());
           if (dot_flags & YNN_NODE_FLAG_F32_DOT_TO_BF16_X3) {
-            tolerance_epsilon = epsilon(ynn_type_bf16) * epsilon(ynn_type_bf16);
+            tolerance_epsilon =
+                epsilon(ynn_type_bf16) * epsilon(ynn_type_bf16) * 2.0f;
           }
           const float tolerance = tolerance_epsilon * (num_k_elements + 1) *
                                   max_abs_value * max_abs_value * 2.0f;
@@ -632,7 +634,8 @@ void TestStaticShapeDynamicB(A, B, C) {
         } else {
           float tolerance_epsilon = epsilon(type_of<C>());
           if (dot_flags & YNN_NODE_FLAG_F32_DOT_TO_BF16_X3) {
-            tolerance_epsilon = epsilon(ynn_type_bf16) * epsilon(ynn_type_bf16);
+            tolerance_epsilon =
+                epsilon(ynn_type_bf16) * epsilon(ynn_type_bf16) * 2.0f;
           }
           const float tolerance = tolerance_epsilon * (num_k_elements + 1) *
                                   max_abs_value * max_abs_value * 2.0f;

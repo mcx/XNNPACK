@@ -1143,6 +1143,18 @@ xnnpack_source_set("test_support") {
   deps = [ ":xnnpack_headers" ]
 }
 
+xnnpack_source_set("graph_matcher") {
+  testonly = true
+  sources = [
+    "test/subgraph/rewrites/subgraph_matcher.cc",
+    "test/subgraph/rewrites/subgraph_matcher.h",
+  ]
+  deps = [
+    ":xnnpack_headers",
+    "//third_party/googletest:gtest",
+  ]
+}
+
 #
 # Unit tests
 #
@@ -1181,6 +1193,7 @@ SUBGRAPH_SEPARATE_TESTS = [
   "concatenate",
   "copy",
   "even_split",
+  "fp16_to_fp32_fallback",
   "softmax",
   "space_to_depth_2d",
   "static_constant_pad",
@@ -1310,6 +1323,11 @@ foreach(subgraph_test, SUBGRAPH_SEPARATE_TESTS) {
                     string_replace(subgraph_test, "_", "-"),
                     ".cc",
                   ]),
+    ]
+    deps = [
+      ":graph_matcher",
+      ":litert_tensor_api",
+      ":subgraph",
     ]
   }
 }

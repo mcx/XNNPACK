@@ -2081,9 +2081,18 @@ static enum xnn_status reshape_subconv2d_path(
   }
 
   if (any_size_change) {
-    const size_t indirection_buffer_size =
-        sizeof(void*) * kernel_size * output_height * stride_width *
-        round_up(divide_round_up(output_width, stride_width), mr);
+    const size_t rounded_output_width =
+      round_up(divide_round_up(output_width, stride_width), mr);
+  size_t indirection_buffer_size = 0;
+  if (!xnn_safe_mul(kernel_size, output_height, &indirection_buffer_size) ||
+      !xnn_safe_mul(indirection_buffer_size, stride_width, &indirection_buffer_size) ||
+      !xnn_safe_mul(indirection_buffer_size, rounded_output_width, &indirection_buffer_size) ||
+      !xnn_safe_mul(indirection_buffer_size, sizeof(void*), &indirection_buffer_size)) {
+    xnn_log_error(
+        "failed to reshape %s operator: indirection buffer size overflows",
+        xnn_operator_type_to_string_v2(deconvolution_op));
+    return xnn_status_out_of_memory;
+  }
 
     const void** indirection_buffer = (const void**)xnn_reallocate_memory(
         deconvolution_op->convolution_op->indirection_buffer,

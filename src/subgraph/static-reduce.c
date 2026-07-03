@@ -206,7 +206,7 @@ static enum xnn_status reshape_reduce_operator(
       if (input_value->flags & XNN_VALUE_FLAG_LAYOUT_NCHW) {
         mapped_input_idx = INVERSE_NCHW_AXES_MAPPING[input_idx];
       }
-      if (output_value->flags == XNN_VALUE_FLAG_LAYOUT_NCHW) {
+      if (output_value->flags & XNN_VALUE_FLAG_LAYOUT_NCHW) {
         mapped_output_idx = NCHW_AXES_MAPPING[mapped_input_idx];
       }
 

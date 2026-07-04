@@ -757,10 +757,10 @@ enum xnn_status xnn_shape_binary_broadcast(const struct xnn_shape* shape_a,
          idx_c >= 0; idx_a--, idx_b--, idx_c--) {
       if (idx_a >= 0 && idx_b >= 0) {
         if (shape_a->dim[idx_a] == 1) {
-          shape_out->dim[idx_c] = shape_a->dim[idx_a];
+          shape_out->dim[idx_c] = shape_b->dim[idx_b];
         } else if (shape_b->dim[idx_b] == 1 ||
                    shape_a->dim[idx_a] == shape_b->dim[idx_b]) {
-          shape_out->dim[idx_c] = shape_b->dim[idx_b];
+          shape_out->dim[idx_c] = shape_a->dim[idx_a];
         } else {
           return xnn_status_invalid_parameter;
         }

@@ -46,7 +46,7 @@ static enum xnn_status create_concatenate_operator(
   xnn_weights_cache_t weights_cache)
 {
   size_t num_inputs = opdata->num_inputs;
-  enum xnn_status status;
+  enum xnn_status status = xnn_status_success;
   const int32_t axis = node->params.concatenate.axis;
   opdata->axis = axis;
   const uint32_t input1_id = opdata->inputs[0];

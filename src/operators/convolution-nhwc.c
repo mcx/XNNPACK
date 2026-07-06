@@ -3230,13 +3230,15 @@ static enum xnn_status reshape_convolution2d_nhwc(
             convolution_op->convolution_op->dilation_width +
         1;
     const size_t total_padding_height =
-        (convolution_op->convolution_op->output_height - 1) *
-            convolution_op->convolution_op->stride_height +
-        effective_kernel_height - input_height;
+        doz((convolution_op->convolution_op->output_height - 1) *
+                    convolution_op->convolution_op->stride_height +
+                effective_kernel_height,
+            input_height);
     const size_t total_padding_width =
-        (convolution_op->convolution_op->output_width - 1) *
-            convolution_op->convolution_op->stride_width +
-        effective_kernel_width - input_width;
+        doz((convolution_op->convolution_op->output_width - 1) *
+                    convolution_op->convolution_op->stride_width +
+                effective_kernel_width,
+            input_width);
     convolution_op->convolution_op->padding_top = total_padding_height / 2;
     convolution_op->convolution_op->padding_left = total_padding_width / 2;
     convolution_op->convolution_op->padding_bottom =

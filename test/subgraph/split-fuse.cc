@@ -210,7 +210,6 @@ TEST(SplitDim, large_axis_rejected) {
 
   xnn_delete_subgraph(subgraph);
 }
-#endif  // XNNPACK_USE_YNNPACK
 
 // A split axis at or beyond the input rank has no dimension to split. Before
 // it was rejected the reshape read input_shape->dim[axis] from past the live
@@ -233,6 +232,7 @@ TEST(SplitDims, RejectsAxisOutOfRange) {
   subgraph.ReshapeExternalTensor(input_shape, input.data(), 0).ReshapeRuntime();
   EXPECT_EQ(subgraph.Status(), xnn_status_invalid_parameter);
 }
+#endif  // XNNPACK_USE_YNNPACK
 
 TEST(FuseAndSplitQS8, test) { FuseAndSplit<quantized<int8_t>>(); }
 TEST(FuseAndSplitQU8, test) { FuseAndSplit<quantized<uint8_t>>(); }

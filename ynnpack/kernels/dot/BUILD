@@ -76,6 +76,30 @@ ynn_generate_srcs(
 )
 
 ynn_generate_srcs(
+    name = "arm_int8_int2_int32",
+    compatible_with = _COMPATIBLE_WITH,
+    generator = "//ynnpack/kernels/dot/generator:arm_int8_int2_int32",
+    output_srcs = [
+        "arm_neondot_int8_int2_int32.cc",
+        "arm_neondot_int8_int2_int32.inc",
+        "arm64_neoni8mm_int8_int2_int32.cc",
+        "arm64_neoni8mm_int8_int2_int32.inc",
+    ],
+)
+
+ynn_generate_srcs(
+    name = "arm_int8_int4_int32",
+    compatible_with = _COMPATIBLE_WITH,
+    generator = "//ynnpack/kernels/dot/generator:arm_int8_int4_int32",
+    output_srcs = [
+        "arm_neondot_int8_int4_int32.cc",
+        "arm_neondot_int8_int4_int32.inc",
+        "arm64_neoni8mm_int8_int4_int32.cc",
+        "arm64_neoni8mm_int8_int4_int32.inc",
+    ],
+)
+
+ynn_generate_srcs(
     name = "arm_fp8_fp8_fp32",
     compatible_with = _COMPATIBLE_WITH,
     generator = "//ynnpack/kernels/dot/generator:arm_fp8_fp8_fp32",
@@ -236,6 +260,34 @@ ynn_generate_srcs(
 )
 
 ynn_generate_srcs(
+    name = "x86_uint8_int2_int32",
+    compatible_with = _COMPATIBLE_WITH,
+    generator = "//ynnpack/kernels/dot/generator:x86_uint8_int2_int32",
+    output_srcs = [
+        "x86_avx2_uint8_int2_int32.cc",
+        "x86_avx2_uint8_int2_int32.inc",
+        "x86_avx512_uint8_int2_int32.cc",
+        "x86_avx512_uint8_int2_int32.inc",
+        "x86_avx512vnni_uint8_int2_int32.cc",
+        "x86_avx512vnni_uint8_int2_int32.inc",
+    ],
+)
+
+ynn_generate_srcs(
+    name = "x86_uint8_int4_int32",
+    compatible_with = _COMPATIBLE_WITH,
+    generator = "//ynnpack/kernels/dot/generator:x86_uint8_int4_int32",
+    output_srcs = [
+        "x86_avx2_uint8_int4_int32.cc",
+        "x86_avx2_uint8_int4_int32.inc",
+        "x86_avx512_uint8_int4_int32.cc",
+        "x86_avx512_uint8_int4_int32.inc",
+        "x86_avx512vnni_uint8_int4_int32.cc",
+        "x86_avx512vnni_uint8_int4_int32.inc",
+    ],
+)
+
+ynn_generate_srcs(
     name = "wasm_fp32",
     compatible_with = _COMPATIBLE_WITH,
     generator = "//ynnpack/kernels/dot/generator:wasm_fp32",
@@ -312,11 +364,15 @@ ynn_cc_library(
         "arm64_neon_fp64.inc",
         "arm64_neonfp8dot4_fp8_e4m3_fp8_e4m3_fp32.inc",
         "arm64_neonfp8dot4_fp8_e5m2_fp8_e5m2_fp32.inc",
+        "arm64_neoni8mm_int8_int2_int32.inc",
+        "arm64_neoni8mm_int8_int4_int32.inc",
         "arm64_neoni8mm_int8_int8_int32.inc",
         "arm64_sme.h",
         "arm_neon_int8_int8_int32.inc",
         "arm_neonbf16_bf16_bf16_fp32_k2.inc",
         "arm_neonbf16_bf16_bf16_fp32_k4.inc",
+        "arm_neondot_int8_int2_int32.inc",
+        "arm_neondot_int8_int4_int32.inc",
         "arm_neondot_int8_int8_int32.inc",
         "dot.h",
         "hexagon_hvx_fp32_32x1.inc",
@@ -330,6 +386,8 @@ ynn_cc_library(
         "x86_avx2_fp32_k2.inc",
         "x86_avx2_int8_int8_int32.inc",
         "x86_avx2_int8_int8_int32_k1.inc",
+        "x86_avx2_uint8_int2_int32.inc",
+        "x86_avx2_uint8_int4_int32.inc",
         "x86_avx512_bf16_bf16_fp32.inc",
         "x86_avx512_bf16_bf16_fp32_k1.inc",
         "x86_avx512_fp16_fp16_fp32.inc",
@@ -340,7 +398,11 @@ ynn_cc_library(
         "x86_avx512_int8_int8_int32.inc",
         "x86_avx512_int8_int8_int32_k1.inc",
         "x86_avx512_int8_int8_int32_k16.inc",
+        "x86_avx512_uint8_int2_int32.inc",
+        "x86_avx512_uint8_int4_int32.inc",
         "x86_avx512bf16_bf16_bf16_fp32.inc",
+        "x86_avx512vnni_uint8_int2_int32.inc",
+        "x86_avx512vnni_uint8_int4_int32.inc",
         "x86_avx512vnni_uint8_int8_int32.inc",
         "x86_avx512vnni_uint8_int8_int32_k16.inc",
         "x86_avx_fp32.inc",
@@ -363,7 +425,11 @@ ynn_cc_library(
             "arm64_neonfp8dot4_fp8_e4m3_fp8_e4m3_fp32.cc",
             "arm64_neonfp8dot4_fp8_e5m2_fp8_e5m2_fp32.cc",
         ],
-        "arm64_neoni8mm": ["arm64_neoni8mm_int8_int8_int32.cc"],
+        "arm64_neoni8mm": [
+            "arm64_neoni8mm_int8_int2_int32.cc",
+            "arm64_neoni8mm_int8_int4_int32.cc",
+            "arm64_neoni8mm_int8_int8_int32.cc",
+        ],
         "arm64_sme": [
             "arm64_sme.cc",
             "arm64_sme_internal.h",
@@ -377,7 +443,11 @@ ynn_cc_library(
             "arm_neonbf16_bf16_bf16_fp32_k2.cc",
             "arm_neonbf16_bf16_bf16_fp32_k4.cc",
         ],
-        "arm_neondot": ["arm_neondot_int8_int8_int32.cc"],
+        "arm_neondot": [
+            "arm_neondot_int8_int2_int32.cc",
+            "arm_neondot_int8_int4_int32.cc",
+            "arm_neondot_int8_int8_int32.cc",
+        ],
         "x86_sse2": ["x86_sse2_fp32.cc"],
         "x86_avx": [
             "x86_avx_fp32.cc",
@@ -393,6 +463,8 @@ ynn_cc_library(
             "x86_avx2_int8_int8_int32.cc",
             "x86_avx2_int8_int8_int32_k1.cc",
             "x86_avx2_fp32_k2.cc",
+            "x86_avx2_uint8_int2_int32.cc",
+            "x86_avx2_uint8_int4_int32.cc",
         ],
         "x86_avx2_fma3": [
             "x86_avx2_fma3_bf16_bf16_fp32.cc",
@@ -410,9 +482,13 @@ ynn_cc_library(
             "x86_avx512_int8_int8_int32.cc",
             "x86_avx512_int8_int8_int32_k1.cc",
             "x86_avx512_int8_int8_int32_k16.cc",
+            "x86_avx512_uint8_int2_int32.cc",
+            "x86_avx512_uint8_int4_int32.cc",
         ],
         "x86_avx512bf16": ["x86_avx512bf16_bf16_bf16_fp32.cc"],
         "x86_avx512vnni": [
+            "x86_avx512vnni_uint8_int2_int32.cc",
+            "x86_avx512vnni_uint8_int4_int32.cc",
             "x86_avx512vnni_uint8_int8_int32.cc",
             "x86_avx512vnni_uint8_int8_int32_k16.cc",
         ],
@@ -466,7 +542,6 @@ cc_test(
     malloc = ynn_binary_malloc(),
     shard_count = select({
         "//ynnpack:hexagon": 50,
-        "//ynnpack:arm": 10,
         "//conditions:default": 1,
     }),
     deps = [

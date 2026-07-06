@@ -83,8 +83,11 @@ enum class multi_type {
   fp16_fp16_fp32,
   bf16_bf16_fp32,
   int8_int8_int32,
-  int8_int4_int32,
   uint8_int8_int32,
+  int8_int4_int32,
+  uint8_int4_int32,
+  int8_int2_int32,
+  uint8_int2_int32,
   fp8_e5m2_fp8_e5m2_fp32,
   fp8_e4m3_fp8_e4m3_fp32,
 };
@@ -150,8 +153,17 @@ inline multi_type multi_type_of(int8_t, int8_t, int32_t) {
 inline multi_type multi_type_of(uint8_t, int8_t, int32_t) {
   return multi_type::uint8_int8_int32;
 }
+inline multi_type multi_type_of(uint8_t, int4x2, int32_t) {
+  return multi_type::uint8_int4_int32;
+}
 inline multi_type multi_type_of(int8_t, int4x2, int32_t) {
   return multi_type::int8_int4_int32;
+}
+inline multi_type multi_type_of(uint8_t, int2x4, int32_t) {
+  return multi_type::uint8_int2_int32;
+}
+inline multi_type multi_type_of(int8_t, int2x4, int32_t) {
+  return multi_type::int8_int2_int32;
 }
 inline multi_type multi_type_of(fp8_e5m2, fp8_e5m2, float) {
   return multi_type::fp8_e5m2_fp8_e5m2_fp32;
@@ -255,8 +267,14 @@ constexpr decltype(auto) SwitchThreeTypes(multi_type type, F&& f) {
       return std::forward<F>(f)(int8_t(), int8_t(), int32_t());
     case multi_type::uint8_int8_int32:
       return std::forward<F>(f)(uint8_t(), int8_t(), int32_t());
+    case multi_type::uint8_int4_int32:
+      return std::forward<F>(f)(uint8_t(), int4x2(), int32_t());
     case multi_type::int8_int4_int32:
       return std::forward<F>(f)(int8_t(), int4x2(), int32_t());
+    case multi_type::uint8_int2_int32:
+      return std::forward<F>(f)(uint8_t(), int2x4(), int32_t());
+    case multi_type::int8_int2_int32:
+      return std::forward<F>(f)(int8_t(), int2x4(), int32_t());
     case multi_type::fp8_e5m2_fp8_e5m2_fp32:
       return std::forward<F>(f)(fp8_e5m2(), fp8_e5m2(), float());
     case multi_type::fp8_e4m3_fp8_e4m3_fp32:
@@ -314,8 +332,14 @@ inline const char* to_string(multi_type type) {
       return "int8_int8_int32";
     case multi_type::uint8_int8_int32:
       return "uint8_int8_int32";
+    case multi_type::uint8_int4_int32:
+      return "uint8_int4_int32";
     case multi_type::int8_int4_int32:
       return "int8_int4_int32";
+    case multi_type::uint8_int2_int32:
+      return "uint8_int2_int32";
+    case multi_type::int8_int2_int32:
+      return "int8_int2_int32";
     case multi_type::fp8_e5m2_fp8_e5m2_fp32:
       return "fp8_e5m2_fp8_e5m2_fp32";
     case multi_type::fp8_e4m3_fp8_e4m3_fp32:

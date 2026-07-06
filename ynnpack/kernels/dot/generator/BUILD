@@ -37,6 +37,8 @@ py_library(
     "arm_fp32",
     "arm_fp64",
     "arm_fp8_fp8_fp32",
+    "arm_int8_int2_int32",
+    "arm_int8_int4_int32",
     "arm_int8_int8_int32",
 ]]
 
@@ -93,6 +95,8 @@ py_library(
     "x86_int8_int8_int32_k16",
     "x86_uint8_int8_int32",
     "x86_uint8_int8_int32_k16",
+    "x86_uint8_int2_int32",
+    "x86_uint8_int4_int32",
 ]]
 
 py_library(

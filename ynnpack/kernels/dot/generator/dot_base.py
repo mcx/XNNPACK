@@ -106,8 +106,18 @@ YNN_INTRINSIC std::size_t min(std::size_t a, std::size_t b) {
   def footer(self):
     return "}  // namespace ynn\n"
 
-  def b_alignment_required(self):
-    return self.tile_shape[1] * self.tile_shape[2]
+  def b_tile_size_bytes(self):
+    sizeof_b = f"sizeof({self.b_type})"
+    return f"({self.tile_shape[1]} * {self.tile_shape[2]} * {sizeof_b})"
+
+  def b_alignment_bytes(self):
+    return self.b_tile_size_bytes()
+
+  def b_tile_stride_k(self):
+    return f"({self.b_tile_size_bytes()} / {self.tile_shape[2]})"
+
+  def b_tile_stride_n(self):
+    return f"({self.b_tile_size_bytes()} / {self.tile_shape[1]})"
 
   def begin_func(self, func_name):
     result = f"""
@@ -123,11 +133,19 @@ void {func_name}(
   assert(K1 > 0);
   assert(M <= {self.block_shape[0]});
 """
+    if self.tile_shape[1] > 1:
+      result += f"""
+  static_assert({self.b_tile_size_bytes()} % {self.tile_shape[1]} == 0, "");
+"""
+    if self.tile_shape[2] > 1:
+      result += f"""
+  static_assert({self.b_tile_size_bytes()} % {self.tile_shape[2]} == 0, "");
+"""
 
     if "dot_flag::unaligned_b" not in self.flags:
       result += f"""\
-  assert(reinterpret_cast<uintptr_t>(B) % ({self.b_alignment_required()} * sizeof({self.b_type})) == 0);
-  assert(B_stride_k1 % ({self.tile_shape[1]} * sizeof({self.b_type})) == 0 || K1 == 1);
+  assert(reinterpret_cast<uintptr_t>(B) % {self.b_alignment_bytes()} == 0);
+  assert(B_stride_k1 % {self.b_tile_stride_k()} == 0 || K1 == 1);
 """
 
     if self.tile_shape[2] > 1:
@@ -158,7 +176,7 @@ void {func_name}(
     ji = j - jo
     return (
         f"reinterpret_cast<const {ty}*>(offset_bytes(B_k1_{jo}, ({k1} *"
-        f" B_stride_k1) + ({ji * self.tile_shape[2]} * sizeof({self.b_type}))))"
+        f" B_stride_k1) + ({ji} * {self.b_tile_stride_n()})))"
     )
 
   def c_in_ptr(self, i, j, ty=None):
@@ -339,20 +357,20 @@ void {func_name}(
 
   def add_c(self, handle_tail):
     block = self.add_c_block()
+    block_n = self.block_shape[1]
     block += "\n"
-    block += f"N -= {self.block_shape[1]};\n"
-    block += f"B = offset_bytes(B, {self.block_shape[1] * self.tile_shape[2]} * sizeof({self.b_type}));\n"
+    block += f"N -= {block_n};\n"
+    block += f"B = offset_bytes(B, {self.b_tile_stride_n()} * {block_n});\n"
     block += (
-        f"C_in = C_in ? offset_bytes(C_in, {self.block_shape[1]} *"
+        f"C_in = C_in ? offset_bytes(C_in, {block_n} *"
         f" sizeof({self.c_type})) : nullptr;\n"
     )
     block += (
-        f"C_out = offset_bytes(C_out, {self.block_shape[1]} *"
-        f" sizeof({self.c_type}));\n"
+        f"C_out = offset_bytes(C_out, {block_n} * sizeof({self.c_type}));\n"
     )
 
     if handle_tail:
-      result = f"if (N >= {self.block_shape[1]}) {{\n"
+      result = f"if (N >= {block_n}) {{\n"
       result += indent(block  , "  ")
       result += "\n} else {\n"
       block = self.add_c_block_tail()
@@ -449,7 +467,7 @@ do {
       # as it doesn't fault.
       result += (
           f"const void* B_k3_{j} = offset_bytes(B, N <= {j} ? 0 :"
-          f" {j * self.tile_shape[2]} * sizeof({self.b_type}));\n"
+          f" {j} * {self.b_tile_stride_n()});\n"
       )
     result += """const void *A_k3 = A;
 std::size_t k3 = K3;

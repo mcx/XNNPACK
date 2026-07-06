@@ -767,7 +767,7 @@ struct quantization_params {
 template <typename Dst, typename F>
 void generate_n(Dst* dst, size_t offset, size_t n, F&& f) {
   using DstInfo = type_info<Dst>;
-  if (DstInfo::element_count() == 1) {
+  if constexpr (DstInfo::element_count() == 1) {
     std::generate_n(dst + offset, n, std::forward<F>(f));
   } else {
     // We could relax these requirements if needed...
@@ -789,7 +789,8 @@ void copy_n(Src* src, size_t src_offset, size_t n, Dst* dst,
             size_t dst_offset) {
   using SrcInfo = type_info<std::remove_cv_t<Src>>;
   using DstInfo = type_info<std::remove_cv_t<Dst>>;
-  if (SrcInfo::element_count() == 1 && DstInfo::element_count() == 1) {
+  if constexpr (SrcInfo::element_count() == 1 &&
+                DstInfo::element_count() == 1) {
     std::copy_n(src + src_offset, n, dst + dst_offset);
   } else {
     // We could relax these requirements if needed...

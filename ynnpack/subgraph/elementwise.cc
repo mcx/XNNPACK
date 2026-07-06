@@ -216,7 +216,7 @@ ynn_status create_unary(const ynn_node& node, ynn_runtime& runtime,
   // We don't want to split the innermost dimension if the type of the input is
   // sub-byte.
   if (type_element_count(a.type) > type_element_count(x.type)) {
-    given_splits.push_back(x.physical_extent(0));
+    given_splits.push_back(slinky::max(1, x.physical_extent(0)));
   }
   auto sched = runtime.make_schedule(dims, x.physical_extents(),
                                      x.buffer->elem_size(), given_splits);

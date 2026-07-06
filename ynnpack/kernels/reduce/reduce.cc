@@ -44,6 +44,8 @@ SUM_FLOAT_K1_KERNEL(sum_squared_k1_bf16_fp32, bfloat16, float, 0, 1, square);
 SUM_FLOAT_KN_KERNEL(sum_squared_kn_bf16_fp32, bfloat16, float, 1, square);
 SUM_FLOAT_K1_KERNEL(sum_squared_k1_fp16_fp32, half, float, 0, 1, square);
 SUM_FLOAT_KN_KERNEL(sum_squared_kn_fp16_fp32, half, float, 1, square);
+SUM_K1_KERNEL(sum_squared_k1_int32, int32_t, int32_t, 1, 1, square);
+SUM_KN_KERNEL(sum_squared_kn_int32, int32_t, int32_t, 1, square);
 SUM_K1_KERNEL(sum_squared_k1_int8_int32, int8_t, int32_t, 1, 1, square);
 SUM_KN_KERNEL(sum_squared_kn_int8_int32, int8_t, int32_t, 1, square);
 SUM_K1_KERNEL(sum_squared_k1_uint8_int32, uint8_t, int32_t, 1, 1, square);

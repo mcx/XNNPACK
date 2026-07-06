@@ -101,7 +101,7 @@ YNN_ALWAYS_INLINE void ReduceRow(ReduceOp op, size_t n, const AT* a,
 
   // Compute the current row.
   for (size_t i = 0; i < n; ++i) {
-    CT a_i = static_cast<CT>(a[i]);
+    CT a_i = type_info<AT>::get(a, i);
 
     switch (op) {
       case ReduceOp::kSum:
@@ -186,7 +186,8 @@ void TestUnaryReduce(AT, CT, std::vector<size_t> ns, std::vector<size_t> ks,
     // For 2-row outputs, we pass the second row. Otherwise we pass `error`,
     // which we use for Kahan summation.
     CT* c1 = c_m == 2 ? &expected(1, i, 0) : error.data();
-    ReduceRow(op, a.extent(1), &a(i - 1, 0), expected.stride(1), c0, c1);
+    ReduceRow(op, a.extent(1), address_of(a(i - 1, 0)), expected.stride(1), c0,
+              c1);
   }
 
   if (k_dim == reduce_dim::k1) {

@@ -398,9 +398,9 @@ static XNN_NO_SANITIZE_FUNCTION enum xnn_status reshape_average_pooling2d(
     const uint32_t kernel_height = average_pooling_op->convolution_op->kernel_height;
     const uint32_t kernel_width = average_pooling_op->convolution_op->kernel_width;
     const uint32_t total_padding_height =
-      (average_pooling_op->convolution_op->output_height - 1) * average_pooling_op->convolution_op->stride_height + kernel_height - input_height;
+      doz((average_pooling_op->convolution_op->output_height - 1) * average_pooling_op->convolution_op->stride_height + kernel_height, input_height);
     const uint32_t total_padding_width =
-      (average_pooling_op->convolution_op->output_width - 1) * average_pooling_op->convolution_op->stride_width + kernel_width - input_width;
+      doz((average_pooling_op->convolution_op->output_width - 1) * average_pooling_op->convolution_op->stride_width + kernel_width, input_width);
     average_pooling_op->convolution_op->padding_top = total_padding_height / 2;
     average_pooling_op->convolution_op->padding_left = total_padding_width / 2;
     average_pooling_op->convolution_op->padding_bottom = total_padding_height - average_pooling_op->convolution_op->padding_top;

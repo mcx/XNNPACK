@@ -203,6 +203,7 @@ config("xnnpack_private_config") {
   } else if (current_cpu == "arm") {
     defines += [
       "XNN_ENABLE_ARM_BF16=1",
+      "XNN_ENABLE_ARM_I8MM=0",
       "XNN_ENABLE_ARM_DOTPROD=1",
       "XNN_ENABLE_ARM_FP16_SCALAR=1",
       "XNN_ENABLE_ARM_FP16_VECTOR=1",

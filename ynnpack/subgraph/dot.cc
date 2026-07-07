@@ -1264,6 +1264,92 @@ ynn_status define_dot(ynn_subgraph& subgraph, size_t num_k_dims,
   return ynn_status_success;
 }
 
+bool can_convert_f32_to_bf16(const ynn_subgraph& subgraph, uint32_t input_a_id,
+                             uint32_t input_b_id, uint32_t flags) {
+  if (!is_constant(subgraph, input_b_id)) {
+    // TODO(b/475315838): Remove this workaround for a correctness bug when B is
+    // not constant.
+    return false;
+  }
+  return (flags & YNN_NODE_FLAG_F32_DOT_TO_BF16_X3) &&
+         subgraph.value(input_a_id).type == ynn_type_fp32 &&
+         subgraph.value(input_b_id).type == ynn_type_fp32;
+}
+
+// Splits an f32 value into 2 components:
+//     i) The bf16 conversion of the input value,
+//     ii) The residual, which is the difference between the input value and
+//         the bf16 conversion.
+ynn_status define_split_f32_to_bf16(ynn_subgraph& subgraph, uint32_t input_id,
+                                    uint32_t* bf16_id,
+                                    uint32_t* residual_bf16_id,
+                                    uint32_t flags) {
+  assert(subgraph.value(input_id).type == ynn_type_fp32);
+
+  // Specifying YNN_NODE_FLAG_NO_EXCESS_PRECISION ensures that this value will
+  // not be optimized to be fp32 when it is used to compute the residual below.
+  ynn_status status = ynn_define_convert_v2(
+      &subgraph, input_id, ynn_type_bf16, bf16_id,
+      flags | YNN_NODE_FLAG_NO_EXCESS_PRECISION);
+  if (status != ynn_status_success) return status;
+
+  // Explicitly define the residual as type bf16 otherwise type fp32 will be
+  // implied.
+  ynn_value& residual_bf16 = subgraph.new_internal_value(ynn_type_bf16);
+  *residual_bf16_id = residual_bf16.id;
+  return ynn_define_binary(&subgraph, ynn_binary_subtract, input_id, *bf16_id,
+                           residual_bf16_id, flags);
+}
+
+// Rewrites a dot with f32 inputs as a sum of 3 dots with bf16 inputs. We omit
+// the residual dot products since its values are negligible.
+//
+// output = a * b + c
+// output ~= (a_bf16 + a_residual) * (b_bf16 + b_residual) + c
+// output ~= a_bf16 * b_bf16 + a_bf16 * b_residual + a_residual * b_bf16 + c
+ynn_status define_bf16_dot_from_f32_inputs(
+    ynn_subgraph& subgraph, size_t num_k_dims, uint32_t input_a_id,
+    uint32_t input_b_id, uint32_t input_c_id, uint32_t* output_id,
+    uint32_t flags) {
+  assert(subgraph.value(input_a_id).type == ynn_type_fp32);
+  assert(subgraph.value(input_b_id).type == ynn_type_fp32);
+
+  uint32_t a_bf16 = YNN_INVALID_VALUE_ID;
+  uint32_t a_residual = YNN_INVALID_VALUE_ID;
+  YNN_RETURN_IF_ERROR(define_split_f32_to_bf16(subgraph, input_a_id, &a_bf16,
+                                               &a_residual, flags));
+
+  uint32_t b_bf16 = YNN_INVALID_VALUE_ID;
+  uint32_t b_residual = YNN_INVALID_VALUE_ID;
+  YNN_RETURN_IF_ERROR(define_split_f32_to_bf16(subgraph, input_b_id, &b_bf16,
+                                               &b_residual, flags));
+
+  // For numerical accuracy, we sum the smallest results together first i.e.
+  // we compute dot(a_residual, b_bf16) + dot(a_bf16, b_residual) before
+  // adding it to dot(a_bf16, b_bf16) + c.
+  uint32_t a_residual_b_bf16_dot = YNN_INVALID_VALUE_ID;
+  YNN_RETURN_IF_ERROR(define_dot(subgraph, num_k_dims, a_residual, b_bf16,
+                                 YNN_INVALID_VALUE_ID, &a_residual_b_bf16_dot,
+                                 flags));
+
+  uint32_t a_bf16_b_residual_dot = YNN_INVALID_VALUE_ID;
+  YNN_RETURN_IF_ERROR(define_dot(subgraph, num_k_dims, a_bf16, b_residual,
+                                 a_residual_b_bf16_dot, &a_bf16_b_residual_dot,
+                                 flags));
+
+  if (input_c_id != YNN_INVALID_VALUE_ID) {
+    uint32_t a_bf16_b_bf16_dot = YNN_INVALID_VALUE_ID;
+    YNN_RETURN_IF_ERROR(define_dot(subgraph, num_k_dims, a_bf16, b_bf16,
+                                   input_c_id, &a_bf16_b_bf16_dot, flags));
+
+    return ynn_define_binary(&subgraph, ynn_binary_add, a_bf16_b_bf16_dot,
+                             a_bf16_b_residual_dot, output_id, flags);
+  } else {
+    return define_dot(subgraph, num_k_dims, a_bf16, b_bf16,
+                      a_bf16_b_residual_dot, output_id, flags);
+  }
+}
+
 }  // namespace
 
 extern "C" {
@@ -1317,8 +1403,14 @@ ynn_status ynn_define_dot(ynn_subgraph_t subgraph, size_t num_k_dims,
     }
   }
 
-  YNN_RETURN_IF_ERROR(define_dot(*subgraph, num_k_dims, input_a_id, input_b_id,
-                                 input_c_id, output_id, flags));
+  if (can_convert_f32_to_bf16(*subgraph, input_a_id, input_b_id, flags)) {
+    YNN_RETURN_IF_ERROR(define_bf16_dot_from_f32_inputs(
+        *subgraph, num_k_dims, input_a_id, input_b_id, input_c_id, output_id,
+        flags));
+  } else {
+    YNN_RETURN_IF_ERROR(define_dot(*subgraph, num_k_dims, input_a_id,
+                                   input_b_id, input_c_id, output_id, flags));
+  }
 
   if (convert_to_id != YNN_INVALID_VALUE_ID) {
     // We decided above to compute the output into an intermediate tensor, and

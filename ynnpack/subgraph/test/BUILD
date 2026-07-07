@@ -12,7 +12,7 @@ cc_library(
     testonly = True,
     srcs = ["scheduler.cc"],
     hdrs = ["scheduler.h"],
-    visibility = ["//ynnpack:__subpackages__"],
+    visibility = ["//ynnpack/subgraph:__subpackages__"],
     deps = [
         "//ynnpack:ynnpack_h",
         "@slinky//slinky/base:thread_pool_impl",

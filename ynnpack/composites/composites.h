@@ -80,23 +80,6 @@ ynn_status define_dot_quantization(ynn_subgraph_t subgraph, size_t num_k_dims,
                                    uint32_t b_scale_id, uint32_t& zero_point_id,
                                    uint32_t& scale_id);
 
-// Splits an f32 value into multiple bf16 values such that
-// `sum(f32(output_ids[i])) ~= input_id`. The output values are ordered by
-// descending significance.
-ynn_status define_convert_f32_to_bf16_sum(ynn_subgraph_t subgraph,
-                                          uint32_t input_id, size_t num_values,
-                                          uint32_t* output_ids, uint32_t flags);
-
-// Compute the dot of values that have been split into descending significance
-// components. This computes the sum of the dot of the values in the cartesian
-// product of a_ids x b_ids, where the sum of the index of the two values is
-// not greater than `max_sum_index`.
-ynn_status define_dot_sum(ynn_subgraph_t subgraph, size_t num_k_dims,
-                          size_t num_a_values, const uint32_t* a_ids,
-                          size_t num_b_values, const uint32_t* b_ids,
-                          uint32_t input_c_id, uint32_t& output_id,
-                          uint32_t flags, int max_sum_index = -1);
-
 }  // namespace ynn
 
 #endif  // XNNPACK_YNNPACK_COMPOSITES_COMPOSITES_H_

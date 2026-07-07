@@ -7,7 +7,6 @@ _COMPATIBLE_WITH = []
 cc_library(
     name = "composites",
     srcs = [
-        "dot.cc",
         "dot_quantization.cc",
         "elementwise.cc",
         "normalization.cc",
@@ -21,7 +20,7 @@ cc_library(
     compatible_with = _COMPATIBLE_WITH,
     visibility = ["//visibility:public"],
     deps = [
-        "//ynnpack:ynnpack_h",
+        "//ynnpack",
         "//ynnpack/base",
     ],
 )
@@ -81,31 +80,4 @@ cc_test(
         ":composites",
         "//ynnpack",
     ] + ynn_test_deps(),
-)
-
-cc_test(
-    name = "dot_test",
-    srcs = ["dot_test.cc"],
-    linkopts = ynn_binary_linkopts(),
-    malloc = ynn_binary_malloc(),
-    deps = [
-        ":composites",
-        "//ynnpack",
-        "//ynnpack/base",
-    ] + ynn_test_deps(),
-)
-
-cc_test(
-    name = "dot_bench",
-    srcs = ["dot_bench.cc"],
-    args = ["--benchmark_min_time=1x"],
-    linkopts = ynn_binary_linkopts(),
-    malloc = ynn_binary_malloc(),
-    deps = [
-        ":composites",
-        "//ynnpack",
-        "//ynnpack/base",
-        "//ynnpack/subgraph/test:scheduler",
-        "@com_google_benchmark//:benchmark",
-    ],
 )

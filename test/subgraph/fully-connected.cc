@@ -238,6 +238,13 @@ void TestStaticB(xnn_datatype convert_to = xnn_datatype_invalid,
       // Align the input channels to the number of filter elements per byte.
       input_channels = round_up(input_channels, filter_channel_factor);
     }
+#ifdef XNNPACK_USE_YNNPACK
+    // In XNNPACK, the weights for sub-byte types are treated as if they are
+    // transposed, which means we need to transpose them again to make the
+    // weights consistent with other types, which means we need the output
+    // channels to be aligned to the number of elements per byte too.
+    output_channels = round_up(output_channels, filter_channel_factor);
+#endif
 
     uint32_t flags = 0;
     if (filter_channel_factor > 1) {
@@ -495,9 +502,7 @@ void TestStaticB(xnn_datatype convert_to = xnn_datatype_invalid,
 
 TEST(FullyConnectedQC8, static_b) { TestStaticB<qint8, qcint8, qcint32>(); }
 TEST(FullyConnectedQS8, static_b) { TestStaticB<qint8, qint8, qint32>(); }
-#ifndef XNNPACK_USE_YNNPACK
 TEST(FullyConnectedQU8, static_b) { TestStaticB<quint8, quint8, qint32>(); }
-#endif  // XNNPACK_USE_YNNPACK
 
 TEST(FullyConnectedQS8QC8W, static_b) { TestStaticB<qint8, qcint8, qcint32>(); }
 TEST(FullyConnectedQS8QC4W, static_b) { TestStaticB<qint8, qcint4, qcint32>(); }
@@ -540,7 +545,6 @@ TEST(FullyConnectedBF16F32, static_b) {
   TestStaticB<xnn_bfloat16, xnn_bfloat16, float, float>();
 }
 
-#ifndef XNNPACK_USE_YNNPACK
 TEST(FullyConnectedQD8F16QC2W, static_b) {
   TestStaticB<xnn_float16, qcint2, float>(/*convert_to=*/xnn_datatype_qdint8);
 }
@@ -548,7 +552,6 @@ TEST(FullyConnectedQD8F16QC2W, static_b) {
 TEST(FullyConnectedQD8F16QC4W, static_b) {
   TestStaticB<xnn_float16, qcint4, float>(/*convert_to=*/xnn_datatype_qdint8);
 }
-#endif  // XNNPACK_USE_YNNPACK
 
 TEST(FullyConnectedQD8F16QC8W, static_b) {
   TestStaticB<xnn_float16, qcint8, float>(/*convert_to=*/xnn_datatype_qdint8);

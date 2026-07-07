@@ -657,14 +657,15 @@ uint32_t define_pack_b(ynn_subgraph_t subgraph, const dot_type& type,
         runtime.globals.make_dims(output.buffer->rank());
 
     slinky::func::input func_input = {input.buffer};
-    slinky::expr tile_k = output.physical_extent(0);
-    slinky::expr block_n = output.physical_extent(1);
+    slinky::expr logical_tile_k = output.extent(0);
+    slinky::expr logical_block_n = output.extent(1);
     slinky::var ko = dims[2];
     slinky::var no = dims[3];
     func_input.bounds = {
         // The callback expects to produce whole ki x ni tiles at once.
-        slinky::min_extent(no * block_n, block_n),
-        slinky::min_extent(ko * tile_k, tile_k),
+        slinky::min_extent(no * logical_block_n, logical_block_n) /
+            element_count,
+        slinky::min_extent(ko * logical_tile_k, logical_tile_k),
     };
     for (size_t i = 4; i < dims.size(); ++i) {
       func_input.bounds.push_back(slinky::point(dims[i]));
@@ -929,6 +930,11 @@ void learn_shape_from_b(dot_shape& shape, size_t num_k_dims,
 }
 
 ynn_status always_alias_transpose(ynn_subgraph& subgraph, uint32_t& id) {
+  const ynn_value& value = subgraph.value(id);
+  if (type_element_count(value.type) != 1) {
+    // We can't alias a transpose of sub-byte types.
+    return ynn_status_unsupported_parameter;
+  }
   const ynn_node* b_producer = subgraph.get_producer(id);
   if (b_producer && std::get_if<ynn_node::static_transpose>(&b_producer->op)) {
     // The producer of this pack is a transpose. If it is transposing the rows
@@ -1458,8 +1464,8 @@ ynn_status ynn_define_dot(ynn_subgraph_t subgraph, size_t num_k_dims,
     const ynn_value& input_c = subgraph->value(input_c_id);
     if (input_c.type != c_type) {
       uint32_t input_c_converted_id = YNN_INVALID_VALUE_ID;
-      YNN_RETURN_IF_ERROR(ynn_define_convert_v2(
-          subgraph, input_c_id, c_type, &input_c_converted_id, flags));
+      YNN_RETURN_IF_ERROR(ynn_define_convert_v2(subgraph, input_c_id, c_type,
+                                                &input_c_converted_id, flags));
       input_c_id = input_c_converted_id;
     }
   }

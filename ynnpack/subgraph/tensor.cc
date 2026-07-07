@@ -32,6 +32,8 @@ ynn_status to_physical_shape(ynn_type type, size_t rank,
   if (dense_dim % element_count != 0) {
     // The logical size of the dense dimension must be a multiple of the number
     // of elements in an instance of the type.
+    YNN_LOG_ERROR() << "dense dimension must be an integer multiple of the "
+                       "number of elements in the type";
     return ynn_status_invalid_parameter;
   }
 

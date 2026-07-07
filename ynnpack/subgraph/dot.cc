@@ -26,7 +26,9 @@
 #include "ynnpack/include/ynnpack.h"
 #include "ynnpack/kernels/dot/pack.h"
 #include "ynnpack/kernels/dot/schedule.h"
+#include "ynnpack/kernels/ternary/ternary.h"
 #include "ynnpack/subgraph/copy.h"
+#include "ynnpack/subgraph/elementwise.h"
 #include "ynnpack/subgraph/runtime.h"
 #include "ynnpack/subgraph/slinky.h"
 #include "ynnpack/subgraph/static_transpose.h"
@@ -44,7 +46,163 @@ using slinky::index_t;
 
 namespace ynn {
 
+bool prefer_uint8_dot(ynn_type b_type) {
+  // Get the kernels we would use for both int8 and uint8.
+  dot_kernel int8 = get_dot_kernel({ynn_type_int8, b_type, ynn_type_int32});
+  dot_kernel uint8 = get_dot_kernel({ynn_type_uint8, b_type, ynn_type_int32});
+  if (!uint8.kernel) {
+    return false;
+  }
+  if (!int8.kernel) {
+    return true;
+  }
+
+  // Find a size that is a common multiple of both kernels.
+  const size_t m = int8.block_m * uint8.block_m;
+  const size_t n = int8.block_n * uint8.block_n;
+  const size_t k = int8.block_k * uint8.block_k;
+  constexpr size_t tile_m = 1;
+
+  // Estimate the cost of both kernels.
+  const float uint8_cost =
+      estimate_dot_cost(m, n, k, uint8.block_m, uint8.block_n, uint8.block_k,
+                        tile_m, uint8.tile_n, uint8.tile_k);
+  const float int8_cost =
+      estimate_dot_cost(m, n, k, int8.block_m, int8.block_n, int8.block_k,
+                        tile_m, int8.tile_n, int8.tile_k);
+  return uint8_cost < int8_cost;
+}
+
 namespace {
+
+bool is_static_zero(const ynn_value& value) {
+  if (!value.is_static()) {
+    return false;
+  }
+  const char* bytes = static_cast<const char*>(value.data->base);
+  size_t size = value.data->size_bytes();
+  return std::all_of(bytes, bytes + size, [](char c) { return c == 0; });
+}
+
+bool is_copy_node(const ynn_node& node, const ynn_subgraph& subgraph) {
+  if (std::holds_alternative<ynn_node::copy>(node.op) ||
+      std::holds_alternative<ynn_node::static_transpose>(node.op) ||
+      std::holds_alternative<ynn_node::static_reshape>(node.op)) {
+    return true;
+  }
+  if (std::holds_alternative<ynn_node::static_pad>(node.op) ||
+      std::holds_alternative<ynn_node::stencil_copy>(node.op)) {
+    uint32_t padding_id =
+        node.inputs.size() > 1 ? node.inputs[1] : YNN_INVALID_VALUE_ID;
+    return padding_id == YNN_INVALID_VALUE_ID ||
+           is_static_zero(subgraph.value(padding_id));
+  }
+  return false;
+}
+
+size_t count_consumers(const ynn_subgraph& subgraph, uint32_t val_id) {
+  size_t count = 0;
+  for (const ynn_node& node : subgraph.nodes) {
+    if (!node.is_valid()) continue;
+    for (uint32_t input : node.inputs) {
+      if (input == val_id) {
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
+bool maybe_rewrite_input_a_to_uint8(ynn_subgraph& subgraph, uint32_t input_a_id,
+                                    ynn_type b_type) {
+  if (!prefer_uint8_dot(b_type)) {
+    return false;
+  }
+
+  std::vector<uint32_t> tensors_to_update;
+  uint32_t curr_id = input_a_id;
+  ynn_node* quantize_node = nullptr;
+
+  while (curr_id != YNN_INVALID_VALUE_ID) {
+    const ynn_value& val = subgraph.value(curr_id);
+    if (val.type != ynn_type_int8 || val.is_external_output()) {
+      return false;
+    }
+    if (count_consumers(subgraph, curr_id) > 1) {
+      return false;
+    }
+
+    tensors_to_update.push_back(curr_id);
+
+    ynn_node* producer = subgraph.get_producer(curr_id);
+    if (!producer) {
+      return false;
+    }
+
+    if (const auto* quantize_op =
+            std::get_if<ynn_node::ternary_elementwise>(&producer->op)) {
+      if (quantize_op->op == ternary_op::quantize_int8) {
+        quantize_node = producer;
+        break;
+      }
+    }
+
+    if (!is_copy_node(*producer, subgraph)) {
+      return false;
+    }
+
+    curr_id = producer->inputs[0];
+  }
+
+  if (!quantize_node) {
+    return false;
+  }
+
+  uint32_t quantize_input_id = quantize_node->inputs[0];
+  const ynn_value& quantize_input = subgraph.value(quantize_input_id);
+  ternary_kernel_fn kernel =
+      get_ternary_kernel(ternary_op::quantize_uint8, quantize_input.type,
+                         ynn_type_fp32, ynn_type_int32, ynn_type_uint8);
+  if (!kernel) {
+    return false;
+  }
+
+  uint32_t zp_id = quantize_node->inputs[2];
+  const ynn_value& zp_val = subgraph.value(zp_id);
+  if (zp_val.is_static_scalar()) {
+    std::optional<ynn::real> zp_real = zp_val.as_scalar();
+    if (!zp_real) {
+      return false;
+    }
+    int32_t old_zp = static_cast<int32_t>(*zp_real);
+    int32_t new_zp = old_zp + 128;
+    zp_id = subgraph.get_scalar_value_id(new_zp);
+  } else {
+    ynn_node* dq_node = subgraph.get_producer(zp_id);
+    if (!dq_node) {
+      return false;
+    }
+    auto* dq_op = std::get_if<ynn_node::dynamic_quantization>(&dq_node->op);
+    if (!dq_op) {
+      return false;
+    }
+    dq_op->output_zero_point = 128;
+  }
+
+  YNN_LOG_DEBUG() << "Rewriting dynamic quantization of tensor " << input_a_id
+                  << " to uint8 in define_dot";
+
+  uint32_t quantize_out_id = quantize_node->outputs[0];
+  define_ternary(subgraph, *quantize_node, quantize_node->inputs[0],
+                 quantize_node->inputs[1], zp_id, quantize_out_id,
+                 ternary_op::quantize_uint8, kernel);
+
+  for (uint32_t id : tensors_to_update) {
+    subgraph.value(id).type = ynn_type_uint8;
+  }
+
+  return true;
+}
 
 // TODO(dsharlet): This should probably be a parameter we learn based on cpuinfo
 // or other source of CPU metadata. This was determined experimentally.
@@ -1276,8 +1434,8 @@ ynn_status ynn_define_dot(ynn_subgraph_t subgraph, size_t num_k_dims,
   YNN_RETURN_IF_ERROR(validate_subgraph("dot", subgraph));
   YNN_RETURN_IF_ERROR(
       validate_input_tensor("dot", subgraph, "input_a_id", input_a_id));
-  YNN_RETURN_IF_ERROR(validate_input_tensor("dot", subgraph, "input_b_id",
-                                            input_b_id, /*optional=*/true));
+  YNN_RETURN_IF_ERROR(
+      validate_input_tensor("dot", subgraph, "input_b_id", input_b_id));
   YNN_RETURN_IF_ERROR(validate_input_tensor("dot", subgraph, "input_c_id",
                                             input_c_id, /*optional=*/true));
   YNN_RETURN_IF_ERROR(
@@ -1289,8 +1447,11 @@ ynn_status ynn_define_dot(ynn_subgraph_t subgraph, size_t num_k_dims,
     return ynn_status_invalid_parameter;
   }
 
-  const ynn_value& a = subgraph->value(input_a_id);
   const ynn_value& b = subgraph->value(input_b_id);
+  // TODO: b/531861696 - This and other dot graph rewrites should be done in a
+  // separate graph optimization pass.
+  maybe_rewrite_input_a_to_uint8(*subgraph, input_a_id, b.type);
+  const ynn_value& a = subgraph->value(input_a_id);
   const ynn_type c_type = deduce_output_type(a.type, b.type);
 
   if (input_c_id != YNN_INVALID_VALUE_ID) {

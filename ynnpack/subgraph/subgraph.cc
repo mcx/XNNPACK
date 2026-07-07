@@ -301,10 +301,14 @@ ynn_value& ynn_subgraph::get_output_value(uint32_t* output_id, ynn_type type) {
 void ynn_subgraph::add_node(ynn_node node) { nodes.push_back(std::move(node)); }
 
 const ynn_node* ynn_subgraph::get_producer(uint32_t id) const {
+  return const_cast<ynn_subgraph*>(this)->get_producer(id);
+}
+
+ynn_node* ynn_subgraph::get_producer(uint32_t id) {
   if (id == YNN_INVALID_VALUE_ID) {
     return nullptr;
   }
-  for (const ynn_node& node : nodes) {
+  for (ynn_node& node : nodes) {
     if (!node.is_valid()) continue;
     for (uint32_t i : node.outputs) {
       if (i == id) {

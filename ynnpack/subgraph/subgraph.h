@@ -653,6 +653,7 @@ struct ynn_subgraph : public ynn::ref_counted<ynn_subgraph> {
 
   // Find the node that produces `id`.
   const ynn_node* get_producer(uint32_t id) const;
+  ynn_node* get_producer(uint32_t id);
 
   // If `output_id` is `YNN_INVALID_VALUE_ID`, makes a new value like
   // `template_value`, and updates `output_id` with the new value ID.

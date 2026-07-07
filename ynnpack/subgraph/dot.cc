@@ -47,6 +47,10 @@ using slinky::index_t;
 namespace ynn {
 
 bool prefer_uint8_dot(ynn_type b_type) {
+  if (!type_is_integral(b_type)) {
+    return false;
+  }
+
   // Get the kernels we would use for both int8 and uint8.
   dot_kernel int8 = get_dot_kernel({ynn_type_int8, b_type, ynn_type_int32});
   dot_kernel uint8 = get_dot_kernel({ynn_type_uint8, b_type, ynn_type_int32});

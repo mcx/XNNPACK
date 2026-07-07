@@ -2502,25 +2502,36 @@ static void init_qd8_bf16_qb4w_gemm_config(void) {
   qd8_bf16_qb4w_gemm_config.nr = 4;
   qd8_bf16_qb4w_gemm_config.planes = 2;
 
-  // The bf16 output conversion uses `vcvt_bf16_f32`, so the i8mm kernels require
-  // both the i8mm and bf16 arch extensions.
-  #if XNN_ARCH_ARM64
+  // The i8mm kernels convert fp32->bf16 with `vcvt_bf16_f32`, so they require both
+  // the i8mm and bf16 arch extensions. The neondot kernels do the conversion with
+  // integer ops, so they only need dotprod. Prefer i8mm, then dotprod, else scalar.
+  #if XNN_ARCH_ARM || XNN_ARCH_ARM64
     const struct xnn_hardware_config* hardware_config = xnn_init_hardware_config();
     assert(hardware_config != NULL);
     (void) hardware_config;  // May be unused.
-    #if XNN_ENABLE_ARM_I8MM && XNN_ENABLE_ARM_BF16
-      if ((hardware_config->arch_flags & xnn_arch_arm_neon_i8mm) &&
-          (hardware_config->arch_flags & xnn_arch_arm_neon_bf16)) {
+    if (XNN_ARCH_ARM64 && XNN_ENABLE_ARM_I8MM && XNN_ENABLE_ARM_BF16 &&
+        (hardware_config->arch_flags & xnn_arch_arm_neon_i8mm) &&
+        (hardware_config->arch_flags & xnn_arch_arm_neon_bf16)) {
+      #if XNN_ARCH_ARM64 && XNN_ENABLE_ARM_I8MM && XNN_ENABLE_ARM_BF16
         qd8_bf16_qb4w_gemm_config.minmax.dqgemm[XNN_MR_TO_INDEX(1)] = XNN_INIT_HMP_DQGEMM_UKERNEL(xnn_qd8_bf16_qb4w_gemm_minmax_ukernel_1x16c8__neoni8mmbf16);
         qd8_bf16_qb4w_gemm_config.minmax.dqgemm[XNN_MR_TO_INDEX(4)] = XNN_INIT_HMP_DQGEMM_UKERNEL(xnn_qd8_bf16_qb4w_gemm_minmax_ukernel_4x16c8__neoni8mmbf16);
-        qd8_bf16_qb4w_gemm_config.init.bf16_qb4w = xnn_init_bf16_qb4w_minmax_scalar_params;
         qd8_bf16_qb4w_gemm_config.mr = 4;
         qd8_bf16_qb4w_gemm_config.nr = 16;
         qd8_bf16_qb4w_gemm_config.log2_kr = 3;
         qd8_bf16_qb4w_gemm_config.planes = 2;
-      }
-    #endif  // XNN_ENABLE_ARM_I8MM && XNN_ENABLE_ARM_BF16
-  #endif  // XNN_ARCH_ARM64
+      #endif  // XNN_ARCH_ARM64 && XNN_ENABLE_ARM_I8MM && XNN_ENABLE_ARM_BF16
+    } else if (XNN_ENABLE_ARM_DOTPROD &&
+               (hardware_config->arch_flags & xnn_arch_arm_neon_dot)) {
+      #if XNN_ENABLE_ARM_DOTPROD
+        qd8_bf16_qb4w_gemm_config.minmax.dqgemm[XNN_MR_TO_INDEX(1)] = XNN_INIT_HMP_DQGEMM_UKERNEL(xnn_qd8_bf16_qb4w_gemm_minmax_ukernel_1x16c4__neondot);
+        qd8_bf16_qb4w_gemm_config.minmax.dqgemm[XNN_MR_TO_INDEX(4)] = XNN_INIT_HMP_DQGEMM_UKERNEL(xnn_qd8_bf16_qb4w_gemm_minmax_ukernel_4x16c4__neondot);
+        qd8_bf16_qb4w_gemm_config.mr = 4;
+        qd8_bf16_qb4w_gemm_config.nr = 16;
+        qd8_bf16_qb4w_gemm_config.log2_kr = 2;
+        qd8_bf16_qb4w_gemm_config.planes = 2;
+      #endif  // XNN_ENABLE_ARM_DOTPROD
+    }
+  #endif  // XNN_ARCH_ARM || XNN_ARCH_ARM64
 
   assert(qd8_bf16_qb4w_gemm_config.mr <= XNN_MAX_MR);
   assert(qd8_bf16_qb4w_gemm_config.mr <= (XNN_EXTRA_QUANTIZATION_PARAMS + 1));

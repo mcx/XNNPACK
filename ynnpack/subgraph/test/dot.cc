@@ -12,7 +12,6 @@
 #include <cstring>
 #include <numeric>
 #include <random>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -133,16 +132,8 @@ void Reference(Tensor<AT> a, Tensor<BT> b, Tensor<half> c) {
 }
 
 template <typename T>
-T get_dot_tolerance(size_t num_k_elements, float max_abs_value,
-                    uint32_t dot_flags) {
-  double eps;
-  if (std::is_same_v<T, float> &&
-      (dot_flags & YNN_NODE_FLAG_F32_DOT_TO_BF16_X3)) {
-    const double eps_bf16 = type_info<bfloat16>::epsilon();
-    eps = eps_bf16 * eps_bf16 * 2.0f;
-  } else {
-    eps = type_info<T>::epsilon();
-  }
+T get_dot_tolerance(size_t num_k_elements, float max_abs_value) {
+  double eps = type_info<T>::epsilon();
   // Account for the initial value too.
   num_k_elements += 1;
   return eps * num_k_elements * max_abs_value * max_abs_value * 2.0;
@@ -161,14 +152,11 @@ Tensor<T> slice_batches(Tensor<T> tensor, std::vector<size_t> at) {
 }
 
 template <typename A, typename B, typename C>
-void VerifyDotResults(
-    Tensor<A> a, Tensor<B> b, Tensor<C> c, Tensor<C> expected,
-    const std::vector<size_t>& batch_dims,
-    const std::vector<size_t>& a_shape,
-    const std::vector<size_t>& b_shape,
-    size_t num_k_dims,
-    float max_abs_value,
-    uint32_t dot_flags) {
+void VerifyDotResults(Tensor<A> a, Tensor<B> b, Tensor<C> c, Tensor<C> expected,
+                      const std::vector<size_t>& batch_dims,
+                      const std::vector<size_t>& a_shape,
+                      const std::vector<size_t>& b_shape, size_t num_k_dims,
+                      float max_abs_value) {
   // Explicitly broadcast any implicit broadcast dimensions.
   const size_t target_rank_a = batch_dims.size() + 1 + num_k_dims;
   if (a.rank() < target_rank_a) {
@@ -199,7 +187,7 @@ void VerifyDotResults(
           << " b_shape=" << index_to_string(b_shape);
     } else {
       const auto tolerance =
-          get_dot_tolerance<C>(num_k_elements, max_abs_value, dot_flags);
+          get_dot_tolerance<C>(num_k_elements, max_abs_value);
       ASSERT_NEAR(c(i), expected(i), tolerance)
           << "i=" << index_to_string(i) << " num_k_dims=" << num_k_dims
           << " a_shape=" << index_to_string(a_shape)
@@ -249,10 +237,6 @@ void TestStaticB(A, B, C) {
     if (random_bool(rng)) {
       subgraph_flags |= YNN_FLAG_CONSISTENT_ARITHMETIC;
     }
-    uint32_t dot_flags = 0;
-    if (random_bool(rng)) {
-      dot_flags |= YNN_NODE_FLAG_F32_DOT_TO_BF16_X3;
-    }
     std::vector<size_t> batch_template_shape =
         random_shape(rng, output_rank - 1, 0, 9);
     std::vector<size_t> a_template_shape = batch_template_shape;
@@ -282,7 +266,7 @@ void TestStaticB(A, B, C) {
       subgraph.AddInput(type_of<C>(), output_rank, c_id);
     }
 
-    subgraph.AddDot(num_k_dims, a_id, b_id, c_id, output_id, dot_flags);
+    subgraph.AddDot(num_k_dims, a_id, b_id, c_id, output_id);
 
     Runtime runtime(subgraph.GetSubgraph(),
                     random_bool(rng) ? &scheduler : nullptr);
@@ -333,7 +317,7 @@ void TestStaticB(A, B, C) {
       ASSERT_EQ(runtime.Status(), ynn_status_success);
 
       VerifyDotResults(a, b, c, expected, batch_dims, a_shape, b_shape,
-                       num_k_dims, max_abs_value, dot_flags);
+                       num_k_dims, max_abs_value);
     }
   }
 }
@@ -411,10 +395,6 @@ void TestDynamicB(A, B, C) {
     if (random_bool(rng)) {
       subgraph_flags |= YNN_FLAG_CONSISTENT_ARITHMETIC;
     }
-    uint32_t dot_flags = 0;
-    if (random_bool(rng)) {
-      dot_flags |= YNN_NODE_FLAG_F32_DOT_TO_BF16_X3;
-    }
     SubgraphBuilder subgraph(4, subgraph_flags);
     const uint32_t a_id = 0;
     const uint32_t b_id = 1;
@@ -456,7 +436,7 @@ void TestDynamicB(A, B, C) {
       subgraph.AddInput(type_of<C>(), output_rank, c_id);
     }
 
-    subgraph.AddDot(num_k_dims, a_id, b_tr_id, c_id, output_id, dot_flags);
+    subgraph.AddDot(num_k_dims, a_id, b_tr_id, c_id, output_id);
 
     Runtime runtime(subgraph.GetSubgraph(),
                     random_bool(rng) ? &scheduler : nullptr);
@@ -514,7 +494,7 @@ void TestDynamicB(A, B, C) {
       ASSERT_EQ(runtime.Status(), ynn_status_success);
 
       VerifyDotResults(a, b, c, expected, shapes.batch_dims, shapes.a, shapes.b,
-                       num_k_dims, max_abs_value, dot_flags);
+                       num_k_dims, max_abs_value);
     }
   }
 }
@@ -572,10 +552,6 @@ void TestStaticShapeDynamicB(A, B, C) {
     if (random_bool(rng)) {
       subgraph_flags |= YNN_FLAG_CONSISTENT_ARITHMETIC;
     }
-    uint32_t dot_flags = 0;
-    if (random_bool(rng)) {
-      dot_flags |= YNN_NODE_FLAG_F32_DOT_TO_BF16_X3;
-    }
     SubgraphBuilder subgraph(4, subgraph_flags);
     const uint32_t a_id = 0;
     const uint32_t b_id = 1;
@@ -606,7 +582,7 @@ void TestStaticShapeDynamicB(A, B, C) {
       subgraph.AddTranspose(b_perm, b_id, b_tr_id);
     }
 
-    subgraph.AddDot(num_k_dims, a_id, b_tr_id, c_id, output_id, dot_flags);
+    subgraph.AddDot(num_k_dims, a_id, b_tr_id, c_id, output_id);
 
     Runtime runtime(subgraph.GetSubgraph(),
                     random_bool(rng) ? &scheduler : nullptr);
@@ -647,7 +623,7 @@ void TestStaticShapeDynamicB(A, B, C) {
       }
 
       VerifyDotResults(a, b, c, expected, shapes.batch_dims, shapes.a, shapes.b,
-                       num_k_dims, max_abs_value, dot_flags);
+                       num_k_dims, max_abs_value);
     }
   }
 }

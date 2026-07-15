@@ -350,7 +350,6 @@ TEST(DepthwiseConvolution2DF16F32, test) {
 }
 TEST(DepthwiseConvolution2DF32, test) { TestImpl<float, float, float>(); }
 
-#ifndef XNNPACK_USE_YNNPACK
 TEST(DepthwiseConvolution2D, reshape_rejects_input_channel_mismatch) {
   ASSERT_EQ(xnn_status_success, xnn_initialize(nullptr /* allocator */));
 
@@ -391,6 +390,5 @@ TEST(DepthwiseConvolution2D, reshape_rejects_input_channel_mismatch) {
       .ReshapeRuntime();
   EXPECT_EQ(subgraph.Status(), xnn_status_invalid_parameter);
 }
-#endif  // XNNPACK_USE_YNNPACK
 
 }  // namespace xnnpack

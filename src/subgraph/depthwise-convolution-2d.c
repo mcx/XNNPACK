@@ -423,8 +423,7 @@ static enum xnn_status reshape_depthwise_convolution_operator(
         input_value->shape.dim[input_value->shape.num_dims - 1];
     if (input_channels != convolution_op->input_pixel_stride) {
       xnn_log_error("failed to reshape %s operator with input ID #%" PRIu32
-                    ": input channels (%zu) must match the operator's number "
-                    "of input channels (%zu)",
+                    ": mismatch at channel dimension (%zu != %zu)",
                     xnn_node_type_to_string(xnn_node_type_depthwise_convolution_2d),
                     input_id, input_channels,
                     convolution_op->input_pixel_stride);

@@ -341,7 +341,6 @@ TEST(Deconvolution2DQD8F32QC8W, test) {
   TestImpl<float, qcint8, float>(/*convert_to=*/xnn_datatype_qdint8);
 }
 
-#ifndef XNNPACK_USE_YNNPACK
 TEST(Deconvolution2D, reshape_rejects_input_channel_mismatch) {
   ASSERT_EQ(xnn_status_success, xnn_initialize(nullptr /* allocator */));
 
@@ -383,6 +382,5 @@ TEST(Deconvolution2D, reshape_rejects_input_channel_mismatch) {
       .ReshapeRuntime();
   EXPECT_EQ(subgraph.Status(), xnn_status_invalid_parameter);
 }
-#endif  // XNNPACK_USE_YNNPACK
 
 }  // namespace xnnpack

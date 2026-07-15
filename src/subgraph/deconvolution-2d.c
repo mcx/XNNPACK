@@ -422,8 +422,7 @@ static enum xnn_status reshape_deconvolution_operator(
       values[input_id].shape.dim[values[input_id].shape.num_dims - 1];
   if (input_channels != opdata->operator_objects[0]->input_pixel_stride) {
     xnn_log_error("failed to reshape %s operator with input ID #%" PRIu32
-                  ": input channels (%zu) must match the operator's number of "
-                  "input channels (%zu)",
+                  ": mismatch at channel dimension (%zu != %zu)",
                   xnn_node_type_to_string(xnn_node_type_deconvolution_2d),
                   input_id, input_channels,
                   opdata->operator_objects[0]->input_pixel_stride);

@@ -5042,7 +5042,7 @@ static void init_qs8_qc4w_gemm_config(void) {
         qs8_qc4w_gemm_config.init.qs8_qc8w = xnn_init_qs8_qc8w_conv_minmax_fp32_scalar_params;
         // TODO(fbarchard): generate avx512/avx2 packw instead of scalar in future
         qs8_qc4w_gemm_config.pack_gemm_goi = (xnn_packw_gemm_goi_ukernel_fn) xnn_qs8_to_qu8_qc4uw_packw_gemm_goi_ukernel_x16c8__scalar;
-        // TODO(fbarchard): add xnn_pack_qs8_to_qu8_qc4uw_gemm_gio_w in future
+        qs8_qc4w_gemm_config.pack_gemm_gio = (xnn_packw_gemm_gio_ukernel_fn) xnn_pack_qs8_to_qu8_qc4uw_gemm_gio_w;
         qs8_qc4w_gemm_config.pack_weights_and_biases = NULL;
         qs8_qc4w_gemm_config.packed_stride_weights_and_biases = NULL;
         qs8_qc4w_gemm_config.planes = 2;
@@ -5059,7 +5059,7 @@ static void init_qs8_qc4w_gemm_config(void) {
         qs8_qc4w_gemm_config.init.qs8_qc8w = xnn_init_qs8_qc8w_conv_minmax_fp32_scalar_params;
         // TODO(fbarchard): generate avx2 packw instead of sse2 in future
         qs8_qc4w_gemm_config.pack_gemm_goi = (xnn_packw_gemm_goi_ukernel_fn) xnn_qs8_to_qu8_qc4uw_packw_gemm_goi_ukernel_x8c8__sse2;
-        // TODO(fbarchard): add xnn_pack_qs8_to_qu8_qc4uw_gemm_gio_w in future
+        qs8_qc4w_gemm_config.pack_gemm_gio = (xnn_packw_gemm_gio_ukernel_fn) xnn_pack_qs8_to_qu8_qc4uw_gemm_gio_w;
         qs8_qc4w_gemm_config.pack_weights_and_biases = NULL;
         qs8_qc4w_gemm_config.packed_stride_weights_and_biases = NULL;
         qs8_qc4w_gemm_config.planes = 2;
@@ -5076,7 +5076,7 @@ static void init_qs8_qc4w_gemm_config(void) {
         qs8_qc4w_gemm_config.init.qs8_qc8w = xnn_init_qs8_qc8w_conv_minmax_fp32_scalar_params;
         // TODO(fbarchard): generate avx2 packw instead of sse2 in future
         qs8_qc4w_gemm_config.pack_gemm_goi = (xnn_packw_gemm_goi_ukernel_fn) xnn_qs8_to_qu8_qc4uw_packw_gemm_goi_ukernel_x8c8__sse2;
-        // TODO(fbarchard): add xnn_pack_qs8_to_qu8_qc4uw_gemm_gio_w in future
+        qs8_qc4w_gemm_config.pack_gemm_gio = (xnn_packw_gemm_gio_ukernel_fn) xnn_pack_qs8_to_qu8_qc4uw_gemm_gio_w;
         qs8_qc4w_gemm_config.pack_weights_and_biases = NULL;
         qs8_qc4w_gemm_config.packed_stride_weights_and_biases = NULL;
         qs8_qc4w_gemm_config.planes = 2;

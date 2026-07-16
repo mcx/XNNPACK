@@ -755,17 +755,6 @@ void copy_quantization(xnn_subgraph_t subgraph, uint32_t from_id,
   }
 }
 
-uint32_t value_flags_from_xnn(uint32_t flags) {
-  uint32_t ynn = 0;
-  if (flags & XNN_VALUE_FLAG_EXTERNAL_INPUT) {
-    ynn |= YNN_VALUE_FLAG_EXTERNAL_INPUT;
-  }
-  if (flags & XNN_VALUE_FLAG_EXTERNAL_OUTPUT) {
-    ynn |= YNN_VALUE_FLAG_EXTERNAL_OUTPUT;
-  }
-  return ynn;
-}
-
 xnn_status xnn_status_from_ynn(ynn_status status) {
   switch (status) {
     case ynn_status_success:

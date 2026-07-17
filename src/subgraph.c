@@ -1790,6 +1790,15 @@ static uint32_t is_pure_unary_elementwise(xnn_subgraph_t subgraph,
                                           uint32_t num_unary_values) {
   switch (node->type) {
     case xnn_node_type_unary_elementwise:
+      // A pure unary elementwise function takes exactly one tensor input and
+      // must have a valid operator. A node already fused into a LUT by this
+      // same pass (see `xnn_define_unary_elementwise_lut_in_place`) has 2
+      // inputs (the tensor and the LUT table) and
+      // `unary_operator == xnn_unary_invalid`; it isn't safe to treat that as
+      // a plain unary function and fuse it into another LUT.
+      if (node->num_inputs != 1 || node->unary_operator == xnn_unary_invalid) {
+        return XNN_INVALID_VALUE_ID;
+      }
       assert(node->num_inputs >= 1);
       return node->inputs[0];
     case xnn_node_type_binary_elementwise: {

@@ -44,9 +44,13 @@ namespace ynn {
   } while (0)
 
 // dot packing splits + transposes 2 dimensions.
-constexpr size_t ynn_internal_extra_dims = 2;
+constexpr size_t internal_extra_dims = 2;
 
-struct axes_set : std::bitset<YNN_MAX_TENSOR_RANK + ynn_internal_extra_dims> {
+// This constant is the internal max tensor rank (as opposed to
+// YNN_MAX_TENSOR_RANK, the limit in the public API).
+constexpr size_t max_tensor_rank = YNN_MAX_TENSOR_RANK + internal_extra_dims;
+
+struct axes_set : std::bitset<max_tensor_rank> {
   using bitset::bitset;
 };
 

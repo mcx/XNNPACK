@@ -125,7 +125,7 @@ bool try_requantize_rewrite(ynn_subgraph& subgraph, uint32_t& input_a_id,
   input_a_id = uint8_a_id;
 
   const ynn_value& b_val = subgraph.value(input_b_id);
-  int32_t reduce_axes[YNN_MAX_TENSOR_RANK];
+  int32_t reduce_axes[max_tensor_rank];
   for (size_t i = 0; i < num_k_dims; ++i) {
     reduce_axes[i] = b_val.rank() - 1 - num_k_dims + i;
   }
@@ -736,9 +736,8 @@ uint32_t define_pack_b(ynn_subgraph_t subgraph, const dot_type& type,
 // TODO(b/454146513): We should try to combine both pack_b and transpose_a into
 // a `split_transpose` op that can handle padding, split, and transpose.
 auto make_transpose_a_impl(int m_dim) {
-  constexpr size_t max_rank = YNN_MAX_TENSOR_RANK + ynn_internal_extra_dims;
-  return [m_dim](slinky::buffer<const void, max_rank> input,
-                 slinky::buffer<void, max_rank> output) -> index_t {
+  return [m_dim](slinky::buffer<const void, max_tensor_rank> input,
+                 slinky::buffer<void, max_tensor_rank> output) -> index_t {
     const slinky::dim& input_k = input.dim(0);
     const slinky::dim& input_m = input.dim(m_dim);
     const slinky::dim& output_ki = output.dim(0);

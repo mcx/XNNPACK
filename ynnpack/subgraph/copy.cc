@@ -155,7 +155,7 @@ slinky::func make_reshape(ynn_runtime& runtime,
     for (int d = 0; d < input.rank; ++d) {
       assert(input.dim(d).min() == 0);
     }
-    slinky::buffer<const void, YNN_MAX_TENSOR_RANK> input_as_output = output;
+    slinky::buffer<const void, max_tensor_rank> input_as_output = output;
     input_as_output.raw_buffer::base = input.raw_buffer::base;
     for (size_t d = 0; d < input_as_output.rank; ++d) {
       input_as_output.mutable_dim(d).set_bounds(0,

@@ -695,7 +695,7 @@ auto make_reshape_impl(ynn_runtime* runtime) {
       }
     }
     if (errors) {
-      return ynn_status_error;
+      return ynn_status_invalid_parameter;
     }
 
     for (auto& i : runtime->values) {
@@ -918,8 +918,9 @@ ynn_status ynn_runtime::build() {
 
 ynn_status ynn_runtime::reshape() {
   setup();
-  return slinky::evaluate(reshape_impl, eval_context) ? ynn_status_error
-                                                      : ynn_status_success;
+  slinky::index_t result = slinky::evaluate(reshape_impl, eval_context);
+  static_assert(ynn_status_success == 0, "");
+  return static_cast<ynn_status>(result);
 }
 
 ynn_status ynn_runtime::setup() {

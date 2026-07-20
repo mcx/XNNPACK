@@ -374,8 +374,7 @@ enum xnn_status xnn_setup_resize_bilinear2d_nhwc(
   const size_t log2_weight_element_size = resize_op->ibilinear_config->log2_weight_element_size;
   const size_t output_height = resize_op->context.resize_nhwc_indirection_init.output_height;
   const size_t output_width = resize_op->context.resize_nhwc_indirection_init.output_width;
-  const size_t num_output_pixels = output_height * output_width;
-  const size_t packed_weights_size = num_output_pixels * (2u << log2_weight_element_size);
+  const size_t packed_weights_size = (output_height * output_width * 2) << log2_weight_element_size;
   if (resize_op->flags & XNN_FLAG_TRANSIENT_INDIRECTION_BUFFER) {
     // indirect_input should start at a multiple of pointer size to avoid ubsan failures
     const size_t indirect_input_offset = (packed_weights_size + sizeof(void*) - 1) & ~(sizeof(void*) - 1);

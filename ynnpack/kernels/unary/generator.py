@@ -337,6 +337,23 @@ def main(argv: Sequence[str]) -> None:
           (tanh_fp32, (16, 1), consistent),
           # go/keep-sorted end
       ],
+      "arm_neonfma": [
+          # go/keep-sorted start
+          (approx_erf_fp32, (16, 1)),
+          (approx_tanh_fp32, (16, 1)),
+          (cosine_fp32, (32, 1)),
+          (erf_fp32, (16, 1)),
+          (exp_fp32, (16, 1)),
+          (expm1_fp32, (16, 1)),
+          (log_fp32, (16, 1)),
+          (poly3_fp32, (32, 1)),
+          (reciprocal_square_root_fp32, (8, 1)),
+          (sigmoid_fp32, (8, 1)),
+          (sine_fp32, (32, 1)),
+          (square_root_fp32, (8, 1)),
+          (tanh_fp32, (16, 1)),
+          # go/keep-sorted end
+      ],
       "arm64_neon": [
           # go/keep-sorted start
           (abs_fp64, (4, 1), consistent),

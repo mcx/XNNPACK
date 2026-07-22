@@ -62,6 +62,7 @@ YNN_GENERATE_UNARY_KERNEL(x86_avx512bf16 x86_avx512bf16)
 
 # ARM
 YNN_GENERATE_UNARY_KERNEL(arm64_neon arm64_neon)
+YNN_GENERATE_UNARY_KERNEL(arm_neonfma arm_neonfma)
 YNN_GENERATE_UNARY_KERNEL(arm_neon arm_neon)
 YNN_GENERATE_UNARY_KERNEL(arm_neonbf16 arm_neonbf16)
 YNN_GENERATE_UNARY_KERNEL(arm_neonfp16 arm_neonfp16)

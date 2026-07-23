@@ -37,6 +37,8 @@ BENCH_UNARY(sse2, sin, f32, 4);
 BENCH_UNARY(sse2, sin, f64, 2);
 BENCH_UNARY(sse2, cos, f32, 4);
 BENCH_UNARY(sse2, cos, f64, 2);
+BENCH_UNARY(sse2, tan, f32, 4);
+BENCH_UNARY(sse2, tan, f64, 2);
 
 BENCH_UNARY(sse2, approx_erf, f32, 4);
 BENCH_UNARY(sse2, approx_tanh, f32, 4);

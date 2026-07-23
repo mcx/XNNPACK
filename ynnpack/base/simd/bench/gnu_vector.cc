@@ -38,6 +38,8 @@ BENCH_UNARY(gnu_vector, sin, f32, 4);
 BENCH_UNARY(gnu_vector, sin, f64, 2);
 BENCH_UNARY(gnu_vector, cos, f32, 4);
 BENCH_UNARY(gnu_vector, cos, f64, 2);
+BENCH_UNARY(gnu_vector, tan, f32, 4);
+BENCH_UNARY(gnu_vector, tan, f64, 2);
 
 BENCH_UNARY(gnu_vector, approx_erf, f32, 4);
 BENCH_UNARY(gnu_vector, approx_tanh, f32, 4);

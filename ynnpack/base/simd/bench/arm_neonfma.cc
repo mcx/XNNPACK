@@ -27,6 +27,7 @@ BENCH_UNARY(neonfma, erf, f32, 4);
 BENCH_UNARY(neonfma, tanh, f32, 4);
 BENCH_UNARY(neonfma, sin, f32, 4);
 BENCH_UNARY(neonfma, cos, f32, 4);
+BENCH_UNARY(neonfma, tan, f32, 4);
 
 BENCH_UNARY(neonfma, approx_erf, f32, 4);
 BENCH_UNARY(neonfma, approx_tanh, f32, 4);

@@ -20,8 +20,8 @@ py_binary(
         "kernels.py",
         "log.py",
         "sigmoid.py",
-        "sine_cosine.py",
         "tanh.py",
+        "trig.py",
     ],
     tags = [
         "manual",

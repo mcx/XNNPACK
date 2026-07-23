@@ -30,7 +30,7 @@ FUNCTION(YNN_GENERATE_UNARY_KERNEL NAME ARCH)
               "${CMAKE_CURRENT_SOURCE_DIR}/exp.py"
               "${CMAKE_CURRENT_SOURCE_DIR}/log.py"
               "${CMAKE_CURRENT_SOURCE_DIR}/sigmoid.py"
-              "${CMAKE_CURRENT_SOURCE_DIR}/sine_cosine.py"
+              "${CMAKE_CURRENT_SOURCE_DIR}/trig.py"
               "${CMAKE_CURRENT_SOURCE_DIR}/tanh.py"
               "${CMAKE_SOURCE_DIR}/ynnpack/kernels/elementwise/generator.py"
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
